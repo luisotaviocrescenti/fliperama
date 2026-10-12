@@ -1,0 +1,1107 @@
+<title>Pega-pega</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;900&display=swap">
+<style>
+/* Layout: placar no topo, o galpão (canvas) no centro com os cartões por cima, controles embaixo */
+:root {
+  --page: #e9e6df; --panel: #f6f4ef; --ink: #22201c; --dim: #67625a; --line: #d3cec3;
+  --accent: #f2b705; --accent-ink: #231a00;
+  --shadow: rgba(40, 35, 25, .38);
+  /* os cartões ficam sempre escuros, por cima do galpão */
+  --veil: rgba(22, 20, 17, .84); --veil-ink: #f5f2ea; --veil-dim: rgba(245, 242, 234, .68);
+  --chip: rgba(255, 255, 255, .08); --chip-hover: rgba(255, 255, 255, .15); --chip-line: rgba(255, 255, 255, .2);
+  --font-display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --font-ui: "Atkinson Hyperlegible", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #141311; --panel: #1d1b18; --ink: #ece8df; --dim: #9c968a; --line: #2e2b26;
+    --accent: #f5c518; --accent-ink: #231a00;
+    --shadow: rgba(0, 0, 0, .6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #141311; --panel: #1d1b18; --ink: #ece8df; --dim: #9c968a; --line: #2e2b26;
+  --accent: #f5c518; --accent-ink: #231a00;
+  --shadow: rgba(0, 0, 0, .6);
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  background: var(--page); color: var(--ink); font-family: var(--font-ui);
+  box-sizing: border-box; min-height: 100%; height: auto;
+  padding-inline: 16px; padding-block: 20px;
+  display: flex; justify-content: center;
+}
+.wrap { width: 100%; max-width: 1280px; display: flex; flex-direction: column; gap: 14px; }
+
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 28px; }
+h1 { margin: 0; font: 900 clamp(36px, 5vw, 52px)/.9 var(--font-display); letter-spacing: .01em; text-transform: uppercase; }
+.sub { margin: 6px 0 0; font-size: 13px; color: var(--dim); }
+.stats { display: flex; flex-wrap: wrap; gap: 12px 26px; }
+.stat { display: flex; flex-direction: column; gap: 4px; min-width: 64px; }
+.stat .k { font: 700 11px/1 var(--font-ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.stat .v { font: 900 32px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.stat .v.small { font: 700 17px/32px var(--font-ui); }
+.stat .v.alert { color: var(--accent-ink); background: var(--accent); border-radius: 999px; padding-inline: 10px; align-self: flex-start; }
+
+.fit { display: flex; justify-content: center; min-width: 0; width: 100%; }
+.stage {
+  position: relative; line-height: 0; border-radius: 14px; overflow: hidden;
+  box-shadow: 0 22px 44px -22px var(--shadow), 0 0 0 1px var(--line);
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.stage:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+canvas { display: block; }
+
+.overlay { position: absolute; inset: 0; display: flex; overflow: auto; padding: 16px; line-height: 1.45; touch-action: auto; }
+.card {
+  margin: auto; width: 100%; max-width: 420px; box-sizing: border-box;
+  background: var(--veil); color: var(--veil-ink);
+  border-radius: 16px; padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 10px; text-align: center;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.card.wide { max-width: 520px; }
+.card h2 { margin: 0; font: 900 clamp(28px, 4vw, 40px)/1 var(--font-display); text-transform: uppercase; letter-spacing: .01em; text-wrap: balance; }
+.card h2.title { font-size: clamp(44px, 7vw, 72px); }
+.card p { margin: 0; font-size: 14px; }
+.card .small { font-size: 12.5px; color: var(--veil-dim); }
+.rules { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.rules li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: baseline; font-size: 14px; }
+.rules .n { font: 900 22px/1 var(--font-display); color: var(--accent); min-width: 1ch; }
+.card button { font-family: var(--font-ui); cursor: pointer; }
+.card button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btns { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.btn {
+  font: 700 15px/1 var(--font-ui); color: var(--veil-ink);
+  background: var(--chip); border: 1px solid var(--chip-line); border-radius: 12px; padding: 13px 16px;
+}
+.btn:hover { background: var(--chip-hover); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; text-align: left; }
+.label { font: 700 11px/1 var(--font-ui); letter-spacing: .12em; text-transform: uppercase; color: var(--veil-dim); }
+.seg { display: inline-flex; border: 1px solid var(--chip-line); border-radius: 999px; overflow: hidden; }
+.seg button { font: 700 13px/1 var(--font-ui); color: var(--veil-ink); background: none; border: 0; padding: 9px 13px; }
+.seg button + button { border-left: 1px solid var(--chip-line); }
+.seg button:hover { background: var(--chip-hover); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.hint { margin: 0; font-size: 13px; color: var(--dim); line-height: 1.8; }
+.hint kbd { font: 700 11px/1 var(--font-ui); border: 1px solid currentColor; border-radius: 4px; padding: 2px 5px; }
+.actions { display: flex; gap: 10px; }
+.toggle {
+  font: 700 13px/1 var(--font-ui); color: var(--ink);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; cursor: pointer;
+}
+.toggle.go { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pad { display: none; flex-basis: 100%; justify-content: space-between; align-items: center; gap: 16px; }
+.dpad { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 52px); gap: 6px; }
+.pad button {
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 3px 0 var(--line); font: 700 17px/1 var(--font-ui); touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.pad button.down { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.d-up { grid-area: 1 / 2; } .d-left { grid-area: 2 / 1; } .d-right { grid-area: 2 / 3; } .d-down { grid-area: 3 / 2; }
+.acts { display: flex; flex-direction: column; gap: 10px; }
+.acts button { padding: 16px 22px; font-size: 15px; }
+.touch-only { display: none; }
+@media (pointer: coarse) {
+  .pad { display: flex; }
+  .touch-only { display: inline; }
+  .mouse-only { display: none; }
+}
+@media (max-width: 520px) {
+  .stats { gap: 10px 16px; }
+  .stat .v { font-size: 26px; }
+  .overlay { padding: 10px; }
+  .card { padding: 14px; gap: 8px; }
+}
+</style>
+
+<main class="wrap">
+  <header class="top">
+    <div>
+      <h1>Pega-pega</h1>
+      <p class="sub">Galpão 3 · um minuto para se esconder, um minuto para fugir</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="k">Fase</span><span class="v small" id="phaseName">Menu</span></div>
+      <div class="stat"><span class="k">Tempo</span><span class="v" id="clock">1:00</span></div>
+      <div class="stat"><span class="k">Pegador</span><span class="v small" id="seekerState">Esperando</span></div>
+      <div class="stat"><span class="k">Você × pegador</span><span class="v" id="tally">0 × 0</span></div>
+    </div>
+  </header>
+
+  <div class="fit" id="fit">
+    <div class="stage" id="stage" tabindex="0" aria-label="Galpão do jogo. Use WASD ou as setas para andar e Espaço para pegar e colocar caixas e rampas.">
+      <canvas id="cv" aria-hidden="true"></canvas>
+      <div class="overlay" id="overlay"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <p class="hint">
+      <span class="mouse-only"><kbd>WASD</kbd> ou setas andam · <kbd>Espaço</kbd> pega e coloca · <kbd>Q</kbd> <kbd>E</kbd> giram o que você carrega · <kbd>Enter</kbd> avisa que está pronto · <kbd>Esc</kbd> pausa</span>
+      <span class="touch-only">Use as setas para andar, Pegar para levantar uma caixa ou rampa e colocar onde aparece a marca, e Girar para virar o que está carregando.</span>
+    </p>
+    <div class="actions">
+      <button class="toggle go" id="readyBtn" type="button" hidden>Pronto, pode vir!</button>
+      <button class="toggle" id="pauseBtn" type="button" hidden>Pausar</button>
+    </div>
+    <div class="pad" id="pad">
+      <div class="dpad">
+        <button class="d-up" type="button" tabindex="-1" data-k="up" aria-label="Andar para cima">▲</button>
+        <button class="d-left" type="button" tabindex="-1" data-k="left" aria-label="Andar para a esquerda">◀&#xFE0E;</button>
+        <button class="d-right" type="button" tabindex="-1" data-k="right" aria-label="Andar para a direita">▶&#xFE0E;</button>
+        <button class="d-down" type="button" tabindex="-1" data-k="down" aria-label="Andar para baixo">▼</button>
+      </div>
+      <div class="acts">
+        <button type="button" tabindex="-1" data-a="grab">Pegar</button>
+        <button type="button" tabindex="-1" data-a="rot">Girar</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+(() => {
+  // Unidades do mundo: 1 unidade ≈ uma caixa pequena; altura 1 = caixa
+  const W = 24, H = 15, R = .36, STEP = .3, CH = .9, CELL = .5, GX = 48, GY = 30, TAU = Math.PI * 2;
+  const HIDE_MS = 60000, SEEK_MS = 60000, RUN_SPEED = 3.3, CARRY_SLOW = .85, PUSH_SLOW = .55;
+  const DIFF = {
+    easy: { name: 'Fácil', speed: 3.0, fov: 45, range: 8, hear: 3, sniff: 14 },
+    normal: { name: 'Normal', speed: 3.45, fov: 55, range: 10, hear: 4, sniff: 9 },
+    hard: { name: 'Difícil', speed: 3.8, fov: 65, range: 12, hear: 5, sniff: 6 }
+  };
+  const ROT = ['up', 'right', 'down', 'left'];
+  const MOVE_KEYS = { KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right' };
+  const NB = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, 1.414], [1, -1, 1.414], [-1, 1, 1.414], [-1, -1, 1.414]];
+
+  // só a borda do galpão: alta, ninguém sobe nem com rampa
+  const WALLS = [
+    { x: 0, y: 0, w: W, h: .5, z: 2 }, { x: 0, y: H - .5, w: W, h: .5, z: 2 },
+    { x: 0, y: .5, w: .5, h: H - 1, z: 2 }, { x: W - .5, y: .5, w: .5, h: H - 1, z: 2 }
+  ];
+  const ZONE = { x: .5, y: .5, w: 4.5, h: 4 }; // onde o pegador conta; ninguém larga caixa aqui
+  const OBJS = [
+    { k: 'box', x: 7, y: 2.5, w: 1, h: 1 }, { k: 'box', x: 12, y: 2, w: 1, h: 1 }, { k: 'box', x: 18, y: 3, w: 1, h: 1 },
+    { k: 'box', x: 5, y: 8, w: 1, h: 1 }, { k: 'box', x: 10, y: 11.5, w: 1, h: 1 }, { k: 'box', x: 16, y: 12, w: 1, h: 1 },
+    { k: 'box', x: 20, y: 8.5, w: 1, h: 1 }, { k: 'box', x: 14, y: 6, w: 1, h: 1 },
+    { k: 'long', x: 8, y: 5.5, w: 2, h: 1 }, { k: 'long', x: 16, y: 5, w: 1, h: 2 }, { k: 'long', x: 3, y: 11, w: 2, h: 1 },
+    { k: 'long', x: 19, y: 11, w: 2, h: 1 }, { k: 'long', x: 12, y: 9.5, w: 1, h: 2 }, { k: 'long', x: 21, y: 2, w: 2, h: 1 },
+    { k: 'ramp', x: 8, y: 8, w: 1, h: 2, dir: 'up' }, { k: 'ramp', x: 17, y: 9, w: 2, h: 1, dir: 'left' },
+    { k: 'ramp', x: 14, y: 13, w: 2, h: 1, dir: 'right' }
+  ];
+  const ring = rad => [[0, 0]].concat(Array.from({ length: 8 }, (_, i) => [Math.cos(i * Math.PI / 4) * rad, Math.sin(i * Math.PI / 4) * rad]));
+  const SAMPLES = ring(R * .92);
+  // o planejamento enxerga o pegador um pouco mais gordo, para o caminho não raspar nas coisas
+  const PLAN_SAMPLES = ring(R * .92 + .12);
+
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), fit = $('fit'), overlay = $('overlay');
+  const readyBtn = $('readyBtn'), pauseBtn = $('pauseBtn');
+  const bg = document.createElement('canvas'), bctx = bg.getContext('2d');
+  const coarse = matchMedia('(pointer: coarse)');
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  let diff = store.get('pegapega.diff', 'normal');
+  if (!DIFF[diff]) diff = 'normal';
+  const tally = { w: store.get('pegapega.w', 0) | 0, l: store.get('pegapega.l', 0) | 0 };
+  let sound = store.get('pegapega.sound', true) !== false;
+
+  let st, phase = 'menu', pausedFrom = null, last = performance.now(), actx = null;
+  let S = 30, E = 18, OT = 40;
+  const keys = new Set(), shown = {};
+  const hgW = new Float32Array(GX * GY), hgO = new Float32Array(GX * GY), mvO = new Int16Array(GX * GY);
+
+  const X = x => x * S, Y = (y, z) => OT + y * S - z * E;
+  const inR = (px, py, r) => px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+  const overlap = (a, b) => a.x < b.x + b.w - .001 && a.x + a.w > b.x + .001 && a.y < b.y + b.h - .001 && a.y + a.h > b.y + .001;
+  const distRect = (px, py, r) => Math.hypot(Math.max(r.x - px, 0, px - r.x - r.w), Math.max(r.y - py, 0, py - r.y - r.h));
+  const circleHits = (cx, cy, r, rect) => distRect(cx, cy, rect) < r;
+  const cellIdx = (x, y) => Math.min(GY - 1, Math.max(0, Math.floor(y / CELL))) * GX + Math.min(GX - 1, Math.max(0, Math.floor(x / CELL)));
+  const fmt = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  function mulberry(a) {
+    return () => {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  /* ---------- alturas e colisão ---------- */
+
+  function rampH(o, px, py) {
+    let t;
+    if (o.dir === 'up') t = (o.y + o.h - py) / o.h;
+    else if (o.dir === 'down') t = (py - o.y) / o.h;
+    else if (o.dir === 'left') t = (o.x + o.w - px) / o.w;
+    else t = (px - o.x) / o.w;
+    return Math.min(1, Math.max(0, t));
+  }
+  const objAt = (o, px, py) => inR(px, py, o) ? (o.k === 'ramp' ? rampH(o, px, py) : 1) : -1;
+  function wallsAt(px, py) {
+    let h = 0;
+    for (const w of WALLS) if (w.z > h && inR(px, py, w)) h = w.z;
+    return h;
+  }
+  function surf(px, py) {
+    let h = wallsAt(px, py);
+    for (const o of st.objs) h = Math.max(h, objAt(o, px, py));
+    return h;
+  }
+  // a altura de quem pisa é a mais alta debaixo do pé inteiro, não só do centro
+  function foot(x, y) {
+    let h = 0;
+    for (const [ox, oy] of SAMPLES) h = Math.max(h, surf(x + ox, y + oy));
+    return h;
+  }
+  function rectFree(rect, exObj, exChar) {
+    for (const w of WALLS) if (overlap(rect, w)) return false;
+    if (overlap(rect, ZONE)) return false;
+    for (let i = 0; i < st.objs.length; i++) if (i !== exObj && overlap(rect, st.objs[i])) return false;
+    for (const ch of [st.run, st.sek]) if (ch !== exChar && circleHits(ch.x, ch.y, R * .98, rect)) return false;
+    return true;
+  }
+
+  function move(ch, dx, dy, canPush) {
+    if (!dx && !dy) return false;
+    ch.pushing = false;
+    if (foot(ch.x + dx, ch.y + dy) <= ch.z + STEP) { ch.x += dx; ch.y += dy; return true; }
+    if (canPush && ch.z < STEP && push(ch, dx, dy)) return true;
+    for (const [mx, my] of [[dx, 0], [0, dy]]) {
+      if ((mx || my) && foot(ch.x + mx, ch.y + my) <= ch.z + STEP) { ch.x += mx; ch.y += my; return true; }
+    }
+    return false;
+  }
+  // o pegador empurra só no eixo principal e nunca uma caixa contra outra
+  function push(ch, dx, dy) {
+    const amt = Math.hypot(dx, dy) * PUSH_SLOW;
+    const px = Math.abs(dx) >= Math.abs(dy) ? Math.sign(dx) * amt : 0, py = px ? 0 : Math.sign(dy) * amt;
+    const nx = ch.x + px, ny = ch.y + py;
+    const hit = [];
+    for (let i = 0; i < st.objs.length; i++) {
+      const o = st.objs[i];
+      if (SAMPLES.some(([ox, oy]) => objAt(o, nx + ox, ny + oy) > ch.z + STEP)) hit.push(i);
+    }
+    if (!hit.length) return false;
+    for (const [ox, oy] of SAMPLES) if (wallsAt(nx + ox, ny + oy) > ch.z + STEP) return false;
+    for (const i of hit) {
+      const o = st.objs[i];
+      if (!rectFree({ x: o.x + px, y: o.y + py, w: o.w, h: o.h }, i, ch)) return false;
+    }
+    for (const i of hit) { st.objs[i].x += px; st.objs[i].y += py; }
+    ch.x = nx; ch.y = ny; ch.pushing = true;
+    return true;
+  }
+  function settle(ch, dt) {
+    const zt = foot(ch.x, ch.y);
+    ch.z = zt >= ch.z ? zt : Math.max(zt, ch.z - 6 * dt);
+  }
+  function face(ch, dx, dy, dt) {
+    const k = Math.min(1, dt * 12);
+    ch.fx += (dx - ch.fx) * k; ch.fy += (dy - ch.fy) * k;
+    const l = Math.hypot(ch.fx, ch.fy) || 1;
+    ch.fx /= l; ch.fy /= l;
+  }
+
+  /* ---------- corredor: pega e coloca ---------- */
+
+  function grabbable() {
+    const r = st.run;
+    if (r.carry || r.z > STEP) return -1;
+    let best = -1, bs = 1e9;
+    st.objs.forEach((o, i) => {
+      const d = distRect(r.x, r.y, o);
+      if (d > R + .5 || d < .01) return;
+      // não dá para levantar uma caixa com alguém em cima
+      if ([st.run, st.sek].some(ch => ch.z > .5 && circleHits(ch.x, ch.y, R * .9, o))) return;
+      const qx = Math.max(o.x, Math.min(r.x, o.x + o.w)), qy = Math.max(o.y, Math.min(r.y, o.y + o.h));
+      const dot = ((qx - r.x) * r.fx + (qy - r.y) * r.fy) / d;
+      const sc = d - dot * .3;
+      if (sc < bs) { bs = sc; best = i; }
+    });
+    return best;
+  }
+  // onde a peça carregada cai: colada na frente do corredor, encaixada na grade de meia unidade
+  function ghost() {
+    const r = st.run, o = r.carry;
+    if (!o) return null;
+    const horiz = Math.abs(r.fx) >= Math.abs(r.fy), sgn = horiz ? (Math.sign(r.fx) || 1) : (Math.sign(r.fy) || 1), gap = .06;
+    const snap = v => Math.round(v * 2) / 2;
+    let along;
+    if (horiz) along = sgn > 0 ? Math.ceil((r.x + R + gap) * 2) / 2 : Math.floor((r.x - R - gap - o.w) * 2) / 2;
+    else along = sgn > 0 ? Math.ceil((r.y + R + gap) * 2) / 2 : Math.floor((r.y - R - gap - o.h) * 2) / 2;
+    const perp = horiz ? snap(r.y - o.h / 2) : snap(r.x - o.w / 2);
+    let first = null;
+    for (const da of [0, .5]) for (const dp of [0, -.5, .5, -1, 1]) {
+      const a = along + sgn * da, b = perp + dp;
+      const rect = horiz ? { x: a, y: b, w: o.w, h: o.h } : { x: b, y: a, w: o.w, h: o.h };
+      if (!first) first = rect;
+      if (r.z < STEP && rectFree(rect, -1, null)) return { rect, ok: true };
+    }
+    return { rect: first, ok: false };
+  }
+  function grabOrPlace() {
+    if (phase !== 'hide' && phase !== 'seek') return;
+    const r = st.run;
+    if (r.carry) {
+      const gh = ghost();
+      if (!gh.ok) { beep('no'); return; }
+      Object.assign(r.carry, { x: gh.rect.x, y: gh.rect.y });
+      st.objs.push(r.carry); r.carry = null;
+      beep('drop'); st.noise = true;
+      return;
+    }
+    const i = grabbable();
+    if (i < 0) { beep('no'); return; }
+    r.carry = st.objs.splice(i, 1)[0];
+    beep('grab'); st.noise = true;
+  }
+  function rotateCarry(sign) {
+    if (phase !== 'hide' && phase !== 'seek') return;
+    const o = st.run.carry;
+    if (!o || (o.w === o.h && o.k !== 'ramp')) return;
+    [o.w, o.h] = [o.h, o.w];
+    if (o.k === 'ramp') o.dir = ROT[(ROT.indexOf(o.dir) + sign + 4) % 4];
+    beep('grab');
+  }
+  function runnerUpdate(dt) {
+    const r = st.run;
+    let dx = 0, dy = 0;
+    if (keys.has('left')) dx--; if (keys.has('right')) dx++;
+    if (keys.has('up')) dy--; if (keys.has('down')) dy++;
+    r.moving = false;
+    if (dx || dy) {
+      const l = Math.hypot(dx, dy), sp = RUN_SPEED * (r.carry ? CARRY_SLOW : 1) * dt;
+      const ox = r.x, oy = r.y;
+      r.moving = move(r, dx / l * sp, dy / l * sp, false);
+      r.walk += Math.hypot(r.x - ox, r.y - oy) * 7;
+      face(r, dx / l, dy / l, dt);
+    }
+    settle(r, dt);
+  }
+
+  /* ---------- pegador ---------- */
+
+  function buildWallGrid() {
+    for (let gy = 0; gy < GY; gy++) for (let gx = 0; gx < GX; gx++) {
+      const cx = (gx + .5) * CELL, cy = (gy + .5) * CELL;
+      let h = 0;
+      for (const [ox, oy] of PLAN_SAMPLES) h = Math.max(h, wallsAt(cx + ox, cy + oy));
+      hgW[gy * GX + gx] = h;
+    }
+  }
+  function buildObjGrid() {
+    hgO.fill(0); mvO.fill(-1);
+    st.objs.forEach((o, i) => {
+      const x0 = Math.max(0, Math.floor((o.x - R - .2) / CELL)), x1 = Math.min(GX - 1, Math.floor((o.x + o.w + R + .2) / CELL));
+      const y0 = Math.max(0, Math.floor((o.y - R - .2) / CELL)), y1 = Math.min(GY - 1, Math.floor((o.y + o.h + R + .2) / CELL));
+      for (let gy = y0; gy <= y1; gy++) for (let gx = x0; gx <= x1; gx++) {
+        const cx = (gx + .5) * CELL, cy = (gy + .5) * CELL;
+        let h = -1;
+        for (const [ox, oy] of PLAN_SAMPLES) h = Math.max(h, objAt(o, cx + ox, cy + oy));
+        const c = gy * GX + gx;
+        if (h > hgO[c]) { hgO[c] = h; mvO[c] = i; }
+      }
+    });
+  }
+  const cellH = c => Math.max(hgW[c], hgO[c]);
+  function hpush(hp, item) {
+    hp.push(item);
+    let i = hp.length - 1;
+    while (i > 0) { const p = (i - 1) >> 1; if (hp[p][0] <= hp[i][0]) break; [hp[p], hp[i]] = [hp[i], hp[p]]; i = p; }
+  }
+  function hpop(hp) {
+    const top = hp[0], end = hp.pop();
+    if (hp.length) {
+      hp[0] = end;
+      let i = 0;
+      for (;;) {
+        const l = i * 2 + 1, r = l + 1;
+        let m = i;
+        if (l < hp.length && hp[l][0] < hp[m][0]) m = l;
+        if (r < hp.length && hp[r][0] < hp[m][0]) m = r;
+        if (m === i) break;
+        [hp[m], hp[i]] = [hp[i], hp[m]]; i = m;
+      }
+    }
+    return top;
+  }
+  // Caminho na grade de alturas: sobe degrau pequeno (rampa), desce qualquer altura,
+  // e atravessa caixa com custo extra porque dá para empurrar
+  function plan(s, t, now) {
+    const n = GX * GY, dist = new Float32Array(n).fill(Infinity), hAt = new Float32Array(n), from = new Int32Array(n).fill(-1);
+    const sc = cellIdx(s.x, s.y), tc = cellIdx(t.x, t.y), tx = tc % GX, ty = (tc / GX) | 0;
+    dist[sc] = 0; hAt[sc] = s.z;
+    const hp = [[0, sc]];
+    let best = sc, bestD = Infinity;
+    while (hp.length) {
+      const [d, c] = hpop(hp);
+      if (d > dist[c]) continue;
+      const cx = c % GX, cy = (c / GX) | 0;
+      const de = Math.hypot(cx - tx, cy - ty);
+      if (de < bestD) { bestD = de; best = c; }
+      if (c === tc) break;
+      const ha = hAt[c];
+      for (const [ddx, ddy, w] of NB) {
+        const nx = cx + ddx, ny = cy + ddy;
+        if (nx < 0 || ny < 0 || nx >= GX || ny >= GY) continue;
+        const nb = ny * GX + nx, hb = cellH(nb);
+        if (s.cellBan[nb] > now) continue;
+        let cost, hn;
+        if (hb <= ha + STEP) { cost = w; hn = hb; }
+        else if (ha < STEP && hgW[nb] <= STEP && mvO[nb] >= 0 && !(s.banned[st.objs[mvO[nb]].id] > now)) { cost = w + 4; hn = ha; }
+        else continue;
+        if (ddx && ddy && (cellH(cy * GX + nx) > ha + STEP || cellH(ny * GX + cx) > ha + STEP)) continue;
+        const nd = d + cost;
+        if (nd < dist[nb]) { dist[nb] = nd; hAt[nb] = hn; from[nb] = c; hpush(hp, [nd, nb]); }
+      }
+    }
+    const end = dist[tc] < Infinity ? tc : best;
+    const path = [];
+    for (let c = end; c !== sc && c >= 0; c = from[c]) path.push(c);
+    path.reverse();
+    return path.map(c => ({ x: (c % GX + .5) * CELL, y: (((c / GX) | 0) + .5) * CELL }));
+  }
+  function clearLine(s, q) {
+    const n = Math.ceil(Math.hypot(q.x - s.x, q.y - s.y) / .2);
+    for (let i = 1; i <= n; i++) if (cellH(cellIdx(s.x + (q.x - s.x) * i / n, s.y + (q.y - s.y) * i / n)) > s.z + STEP) return false;
+    return true;
+  }
+  function waypoint(s) {
+    const p = s.path;
+    while (p.length > 1 && Math.hypot(p[0].x - s.x, p[0].y - s.y) < .3) p.shift();
+    if (!p.length) return null;
+    for (let k = Math.min(3, p.length - 1); k > 0; k--) if (clearLine(s, p[k])) return p[k];
+    return p[0];
+  }
+  function randomSpot(c) {
+    for (let i = 0; i < 40; i++) {
+      const x = c && i < 25 ? c.x + (Math.random() - .5) * 12 : 1 + Math.random() * (W - 2);
+      const y = c && i < 25 ? c.y + (Math.random() - .5) * 10 : 1 + Math.random() * (H - 2);
+      if (x < .9 || y < .9 || x > W - .9 || y > H - .9 || inR(x, y, ZONE)) continue;
+      if (cellH(cellIdx(x, y)) <= .05) return { x, y };
+    }
+    return { x: W / 2, y: H / 2 };
+  }
+  // linha de visão: parede ou caixa mais alta que os olhos dos dois atrapalha; rampa não
+  function segT(ax, ay, bx, by, r) {
+    let t0 = 0, t1 = 1;
+    const dx = bx - ax, dy = by - ay, p = [-dx, dx, -dy, dy], q = [ax - r.x, r.x + r.w - ax, ay - r.y, r.y + r.h - ay];
+    for (let i = 0; i < 4; i++) {
+      if (p[i] === 0) { if (q[i] < 0) return -1; continue; }
+      const t = q[i] / p[i];
+      if (p[i] < 0) { if (t > t1) return -1; if (t > t0) t0 = t; }
+      else { if (t < t0) return -1; if (t < t1) t1 = t; }
+    }
+    return t0;
+  }
+  function blockers(eye) {
+    const out = [];
+    for (const w of WALLS) if (w.z > eye + .05) out.push(w);
+    for (const o of st.objs) if (o.k !== 'ramp' && 1 > eye + .05) out.push(o);
+    return out;
+  }
+  function los(a, b) {
+    for (const r of blockers(Math.max(a.z, b.z))) if (segT(a.x, a.y, b.x, b.y, r) >= 0) return false;
+    return true;
+  }
+  function rayDist(s, ang, max, bl) {
+    const bx = s.x + Math.cos(ang) * max, by = s.y + Math.sin(ang) * max;
+    let tmin = 1;
+    for (const r of bl) { const t = segT(s.x, s.y, bx, by, r); if (t >= 0 && t < tmin) tmin = t; }
+    return tmin * max;
+  }
+  function canSee(s, r, D) {
+    const dx = r.x - s.x, dy = r.y - s.y, d = Math.hypot(dx, dy);
+    // colado em você ele percebe, inclusive olhando para baixo de cima de uma caixa
+    if (d < 1.4) return los(s, r);
+    if (d > D.range) return false;
+    if ((dx * s.fx + dy * s.fy) / d < Math.cos(D.fov * Math.PI / 180)) return false;
+    return los(s, r);
+  }
+
+  function seekerUpdate(dt, now) {
+    const s = st.sek, r = st.run, D = DIFF[diff];
+    s.sees = canSee(s, r, D);
+    if (s.sees) {
+      if (!s.wasSeeing) beep('seen');
+      s.know = { x: r.x, y: r.y }; s.state = 'chase'; s.sniffT = 0;
+    } else {
+      s.sniffT += dt;
+      const d = Math.hypot(r.x - s.x, r.y - s.y);
+      const heard = (r.moving && d < D.hear) || (st.noise && d < D.hear * 1.8);
+      if (heard || s.sniffT > D.sniff) {
+        s.why = heard ? 'heard' : 'sniff';
+        s.know = { x: r.x, y: r.y }; s.state = 'investigate'; s.sniffT = 0; s.replan = 0;
+      }
+    }
+    st.noise = false;
+    s.wasSeeing = s.sees;
+
+    let target = null;
+    if (s.state === 'chase' || s.state === 'investigate') {
+      target = s.know;
+      if (!s.sees && Math.hypot(s.know.x - s.x, s.know.y - s.y) < .7) { s.state = 'search'; s.searchPt = null; }
+    }
+    if (s.state === 'search') {
+      s.searchT += dt;
+      if (!s.searchPt || s.searchT > 7 || Math.hypot(s.searchPt.x - s.x, s.searchPt.y - s.y) < .7) { s.searchPt = randomSpot(s.know); s.searchT = 0; s.replan = 0; }
+      target = s.searchPt;
+    }
+    s.replan -= dt;
+    if (target && s.replan <= 0) { buildObjGrid(); s.path = plan(s, target, now); s.replan = .25; }
+
+    let wp = null;
+    if (s.sees && Math.hypot(r.x - s.x, r.y - s.y) < 1.6) wp = r;
+    else if (s.jiggle > 0) { s.jiggle -= dt; wp = { x: s.x + Math.cos(s.jang), y: s.y + Math.sin(s.jang) }; }
+    else wp = waypoint(s);
+    s.moving = false;
+    if (wp) {
+      let dx = wp.x - s.x, dy = wp.y - s.y;
+      const l = Math.hypot(dx, dy);
+      if (l > .04) {
+        dx /= l; dy /= l;
+        const sp = Math.min(l, D.speed * dt), ox = s.x, oy = s.y;
+        s.moving = move(s, dx * sp, dy * sp, true);
+        s.walk += Math.hypot(s.x - ox, s.y - oy) * 7;
+        face(s, dx, dy, dt);
+      }
+    }
+    settle(s, dt);
+
+    // preso: marca a caixa da frente como "não sai" por um tempo e procura outro caminho
+    s.stuckClock += dt;
+    if (s.stuckClock >= .8) {
+      const moved = Math.hypot(s.x - s.lx, s.y - s.ly);
+      if (wp && moved < .12) {
+        const fx = s.x + s.fx * (R + .3), fy = s.y + s.fy * (R + .3);
+        const o = st.objs.find(q => inR(fx, fy, q));
+        if (o) s.banned[o.id] = now + 7000;
+        else if (s.path.length) s.cellBan[cellIdx(s.path[0].x, s.path[0].y)] = now + 4000;
+        s.jiggle = .35; s.jang = Math.random() * TAU; s.replan = 0;
+      }
+      s.lx = s.x; s.ly = s.y; s.stuckClock = 0;
+    }
+  }
+
+  /* ---------- partida ---------- */
+
+  function newRound() {
+    st = {
+      objs: OBJS.map((o, i) => Object.assign({ id: i }, o)),
+      run: { x: 12, y: 8, z: 0, fx: 0, fy: 1, carry: null, moving: false, pushing: false, walk: 0 },
+      sek: { x: 2.5, y: 2.4, z: 0, fx: 0, fy: 1, path: [], replan: 0, know: null, state: 'wait', why: '', sees: false, wasSeeing: false,
+        sniffT: 0, searchPt: null, searchT: 0, stuckClock: 0, lx: 2.5, ly: 2.4, banned: {}, cellBan: {}, jiggle: 0, jang: 0, moving: false, pushing: false, walk: 0 },
+      left: HIDE_MS, result: null, survived: 0, noise: false
+    };
+    buildWallGrid();
+    buildObjGrid();
+  }
+  function startRound() {
+    newRound();
+    phase = 'hide'; keys.clear(); beep('start'); sync();
+  }
+  function startSeek() {
+    if (phase !== 'hide') return;
+    phase = 'seek'; st.left = SEEK_MS;
+    buildObjGrid();
+    const s = st.sek;
+    s.state = 'search'; s.searchPt = { x: 7, y: 6 }; s.searchT = 0; s.replan = 0;
+    beep('whistle'); sync();
+  }
+  function endRound(won) {
+    phase = 'over';
+    st.result = won ? 'won' : 'lost';
+    st.survived = SEEK_MS - st.left;
+    if (won) tally.w++; else tally.l++;
+    store.set('pegapega.w', tally.w); store.set('pegapega.l', tally.l);
+    keys.clear();
+    beep(won ? 'win' : 'caught'); sync();
+  }
+  function pause() { if (phase === 'hide' || phase === 'seek') { pausedFrom = phase; phase = 'paused'; keys.clear(); sync(); } }
+  function resume() { if (phase === 'paused') { phase = pausedFrom; sync(); } }
+  function toMenu() { phase = 'menu'; newRound(); sync(); }
+
+  function frame(now) {
+    const dtm = Math.min(now - last, 50), dt = dtm / 1000;
+    last = now;
+    if (phase === 'hide' || phase === 'seek') {
+      st.left -= dtm;
+      runnerUpdate(dt);
+      if (phase === 'seek') {
+        seekerUpdate(dt, now);
+        const s = st.sek, r = st.run;
+        if (Math.hypot(s.x - r.x, s.y - r.y) < R * 2 * .95 && Math.abs(s.z - r.z) < .55) endRound(false);
+        else if (st.left <= 0) { st.left = 0; endRound(true); }
+      } else if (st.left <= 0) startSeek();
+      syncLive();
+    }
+    draw(now);
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- desenho ---------- */
+
+  function buildFloor() {
+    bg.width = cv.width; bg.height = cv.height;
+    const b = bctx, rnd = mulberry(31);
+    b.fillStyle = '#2a2722'; b.fillRect(0, 0, bg.width, bg.height);
+    b.fillStyle = '#bdb7ab'; b.fillRect(0, Y(0, 0), W * S, H * S);
+    const sp = Math.max(1, S * .045);
+    for (let i = 0; i < W * H * 16; i++) {
+      b.fillStyle = rnd() < .5 ? 'rgba(60,52,40,.07)' : 'rgba(255,255,255,.08)';
+      b.fillRect(X(rnd() * W), Y(rnd() * H, 0), sp, sp);
+    }
+    for (let i = 0; i < 6; i++) {
+      const x = X(1 + rnd() * (W - 2)), y = Y(1 + rnd() * (H - 2), 0), r = S * (.6 + rnd() * 1.2);
+      const gr = b.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, 'rgba(70,60,45,.16)'); gr.addColorStop(1, 'rgba(70,60,45,0)');
+      b.fillStyle = gr; b.beginPath(); b.ellipse(x, y, r, r * .7, rnd() * 3, 0, TAU); b.fill();
+    }
+    // juntas de dilatação do piso a cada 4 unidades
+    b.strokeStyle = 'rgba(70,62,50,.22)'; b.lineWidth = Math.max(1, S * .03);
+    b.beginPath();
+    for (let x = 4; x < W; x += 4) { b.moveTo(X(x), Y(0, 0)); b.lineTo(X(x), Y(H, 0)); }
+    for (let y = 4; y < H; y += 4) { b.moveTo(0, Y(y, 0)); b.lineTo(X(W), Y(y, 0)); }
+    b.stroke();
+    // canto pintado onde o pegador conta
+    b.save(); b.beginPath(); b.rect(X(ZONE.x), Y(ZONE.y, 0), ZONE.w * S, ZONE.h * S); b.clip();
+    b.fillStyle = 'rgba(58,53,45,.85)'; b.fillRect(X(ZONE.x), Y(ZONE.y, 0), ZONE.w * S, ZONE.h * S);
+    b.fillStyle = 'rgba(242,183,5,.5)';
+    for (let k = -8; k < 14; k++) {
+      const x0 = X(ZONE.x + k * .7);
+      b.beginPath(); b.moveTo(x0, Y(ZONE.y, 0)); b.lineTo(x0 + .35 * S, Y(ZONE.y, 0)); b.lineTo(x0 + .35 * S + ZONE.h * S, Y(ZONE.y + ZONE.h, 0)); b.lineTo(x0 + ZONE.h * S, Y(ZONE.y + ZONE.h, 0)); b.fill();
+    }
+    b.restore();
+    b.strokeStyle = 'rgba(242,183,5,.9)'; b.lineWidth = Math.max(2, S * .07);
+    b.strokeRect(X(ZONE.x), Y(ZONE.y, 0), ZONE.w * S, ZONE.h * S);
+    b.fillStyle = 'rgba(242,183,5,.95)'; b.font = '900 ' + Math.round(S * .4) + 'px "Big Shoulders Display", Impact, sans-serif';
+    b.textAlign = 'center'; b.textBaseline = 'middle';
+    b.fillText('ESPERA DO PEGADOR', X(ZONE.x + ZONE.w / 2), Y(ZONE.y + ZONE.h + .3, 0));
+  }
+
+  function layout() {
+    const dpr = window.devicePixelRatio || 1, w = fit.clientWidth;
+    if (!w || !st) return;
+    const ns = Math.max(8, Math.floor(w * dpr / W));
+    const cssW = ns * W / dpr + 'px';
+    if (ns === S && cv.style.width === cssW) return;
+    S = ns; E = Math.round(S * .62); OT = Math.round(S * 1.35);
+    cv.width = S * W; cv.height = S * H + OT;
+    cv.style.width = cssW; cv.style.height = cv.height / dpr + 'px';
+    buildFloor();
+  }
+
+  function shadowPath(r, hgt) {
+    const ox = .28 * hgt, oy = .2 * hgt;
+    ctx.moveTo(X(r.x), Y(r.y, 0)); ctx.lineTo(X(r.x + r.w), Y(r.y, 0)); ctx.lineTo(X(r.x + r.w + ox), Y(r.y + oy, 0));
+    ctx.lineTo(X(r.x + r.w + ox), Y(r.y + r.h + oy, 0)); ctx.lineTo(X(r.x + ox), Y(r.y + r.h + oy, 0)); ctx.lineTo(X(r.x), Y(r.y + r.h, 0));
+    ctx.closePath();
+  }
+
+  function drawWall(w) {
+    const x0 = X(w.x), wd = w.w * S, top = Y(w.y, w.z), bot = Y(w.y + w.h, w.z), gnd = Y(w.y + w.h, 0);
+    ctx.fillStyle = '#6b675f'; ctx.fillRect(x0, bot, wd, gnd - bot);
+    ctx.fillStyle = 'rgba(40,36,30,.25)';
+    for (let k = 1; k < 4; k++) ctx.fillRect(x0, bot + (gnd - bot) * k / 4, wd, Math.max(1, S * .02));
+    ctx.fillStyle = '#99958c'; ctx.fillRect(x0, top, wd, bot - top);
+    ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(x0, top, wd, Math.max(1, S * .04));
+  }
+
+  // zb: altura da base (0 no chão; acima da cabeça quando carregada)
+  function drawCrate(o, mark, zb) {
+    const x0 = X(o.x), wd = o.w * S, top = Y(o.y, zb + 1), bot = Y(o.y + o.h, zb + 1), gnd = Y(o.y + o.h, zb), lw = Math.max(1, S * .045);
+    ctx.fillStyle = '#93622f'; ctx.fillRect(x0, bot, wd, gnd - bot);
+    ctx.fillStyle = 'rgba(60,35,10,.35)';
+    ctx.fillRect(x0, bot + (gnd - bot) * .5, wd, Math.max(1, S * .025));
+    ctx.fillStyle = '#c99459'; ctx.fillRect(x0, top, wd, bot - top);
+    ctx.strokeStyle = '#6b4320'; ctx.lineWidth = lw;
+    ctx.strokeRect(x0 + lw / 2, top + lw / 2, wd - lw, bot - top - lw);
+    const ins = S * .14;
+    ctx.strokeStyle = 'rgba(95,60,25,.55)';
+    ctx.strokeRect(x0 + ins, top + ins, wd - ins * 2, bot - top - ins * 2);
+    ctx.beginPath();
+    const cells = Math.round(o.w * o.h);
+    if (o.w >= o.h) for (let k = 0; k < cells; k++) { const a = x0 + ins + (wd - ins * 2) * k / cells, b = x0 + ins + (wd - ins * 2) * (k + 1) / cells; ctx.moveTo(a, top + ins); ctx.lineTo(b, bot - ins); if (k) { ctx.moveTo(a, top + ins); ctx.lineTo(a, bot - ins); } }
+    else for (let k = 0; k < cells; k++) { const a = top + ins + (bot - top - ins * 2) * k / cells, b = top + ins + (bot - top - ins * 2) * (k + 1) / cells; ctx.moveTo(x0 + ins, a); ctx.lineTo(x0 + wd - ins, b); if (k) { ctx.moveTo(x0 + ins, a); ctx.lineTo(x0 + wd - ins, a); } }
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,240,210,.25)'; ctx.fillRect(x0, top, wd, Math.max(1, S * .04));
+    if (mark) markTop([[o.x, o.y, zb + 1], [o.x + o.w, o.y, zb + 1], [o.x + o.w, o.y + o.h, zb + 1], [o.x, o.y + o.h, zb + 1]], mark);
+  }
+
+  function drawRamp(o, mark, zb) {
+    const c = [[o.x, o.y], [o.x + o.w, o.y], [o.x + o.w, o.y + o.h], [o.x, o.y + o.h]].map(([x, y]) => [x, y, zb + rampH(o, x, y)]);
+    // face da frente (lado sul), quando a rampa tem altura ali
+    if (c[2][2] > zb || c[3][2] > zb) {
+      ctx.fillStyle = '#7d7466';
+      ctx.beginPath(); ctx.moveTo(X(c[3][0]), Y(c[3][1], zb)); ctx.lineTo(X(c[2][0]), Y(c[2][1], zb));
+      ctx.lineTo(X(c[2][0]), Y(c[2][1], c[2][2])); ctx.lineTo(X(c[3][0]), Y(c[3][1], c[3][2])); ctx.fill();
+    }
+    const u = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[o.dir];
+    const L = u[0] ? o.w : o.h, Wd = u[0] ? o.h : o.w, cx = o.x + o.w / 2, cy = o.y + o.h / 2;
+    const lo = [cx - u[0] * L / 2, cy - u[1] * L / 2], hi = [cx + u[0] * L / 2, cy + u[1] * L / 2];
+    const gr = ctx.createLinearGradient(X(lo[0]), Y(lo[1], zb), X(hi[0]), Y(hi[1], zb + 1));
+    gr.addColorStop(0, '#a99d86'); gr.addColorStop(1, '#ddd2b9');
+    ctx.fillStyle = gr;
+    ctx.beginPath(); c.forEach(([x, y, z], i) => i ? ctx.lineTo(X(x), Y(y, z)) : ctx.moveTo(X(x), Y(y, z))); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#5d564b'; ctx.lineWidth = Math.max(1, S * .04); ctx.stroke();
+    // setas amarelas apontando para o lado alto
+    const pt = (a, b) => { const x = cx + u[0] * a - u[1] * b, y = cy + u[1] * a + u[0] * b; return [X(x), Y(y, zb + Math.min(1, Math.max(0, (a + L / 2) / L)))]; };
+    ctx.strokeStyle = '#e0a21b'; ctx.lineWidth = Math.max(1.5, S * .07); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (const a0 of [-L * .28, 0, L * .28]) {
+      const p1 = pt(a0 - .14, -Wd * .28), p2 = pt(a0 + .1, 0), p3 = pt(a0 - .14, Wd * .28);
+      ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.lineTo(p3[0], p3[1]); ctx.stroke();
+    }
+    if (mark) markTop(c, mark);
+  }
+
+  function markTop(c, kind) {
+    ctx.save();
+    ctx.strokeStyle = '#f5c518'; ctx.lineWidth = Math.max(2, S * .07);
+    if (kind === 'near') ctx.setLineDash([S * .18, S * .12]);
+    ctx.beginPath(); c.forEach(([x, y, z], i) => i ? ctx.lineTo(X(x), Y(y, z)) : ctx.moveTo(X(x), Y(y, z))); ctx.closePath(); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawGhost(gh, o) {
+    const r = gh.rect, x0 = X(r.x), y0 = Y(r.y, 0), wd = r.w * S, ht = r.h * S;
+    ctx.save();
+    ctx.fillStyle = gh.ok ? 'rgba(70,200,110,.22)' : 'rgba(220,70,60,.2)';
+    ctx.fillRect(x0, y0, wd, ht);
+    ctx.strokeStyle = gh.ok ? 'rgba(40,150,80,.95)' : 'rgba(190,50,40,.9)';
+    ctx.lineWidth = Math.max(2, S * .06); ctx.setLineDash([S * .16, S * .1]);
+    ctx.strokeRect(x0, y0, wd, ht);
+    if (o.k === 'ramp') {
+      const u = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[o.dir], cx = x0 + wd / 2, cy = y0 + ht / 2, a = S * .35;
+      ctx.setLineDash([]); ctx.beginPath();
+      ctx.moveTo(cx - u[0] * a, cy - u[1] * a); ctx.lineTo(cx + u[0] * a, cy + u[1] * a);
+      ctx.moveTo(cx + u[0] * a - u[1] * a * .5 - u[0] * a * .5, cy + u[1] * a + u[0] * a * .5 - u[1] * a * .5); ctx.lineTo(cx + u[0] * a, cy + u[1] * a);
+      ctx.lineTo(cx + u[0] * a + u[1] * a * .5 - u[0] * a * .5, cy + u[1] * a - u[0] * a * .5 - u[1] * a * .5);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function rrect(x, y, w, h, r) {
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+    ctx.fill();
+  }
+  function limb(x1, y1, x2, y2, wdt, col) {
+    ctx.strokeStyle = col; ctx.lineWidth = wdt; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+  // Bonequinho em pé visto de cima e um pouco de frente: pernas, tronco, braços e cabeça
+  function drawPerson(ch, seeker, carrying) {
+    const x = X(ch.x), y0 = Y(ch.y, ch.z), u = S, hz = z => y0 - z * E;
+    const C = seeker
+      ? { shirt: '#d1463a', shirtD: '#a3332a', pants: '#3b3030', hair: '#2a1d17', skin: '#d9a27c' }
+      : { shirt: '#2f86c9', shirtD: '#22679c', pants: '#2e3a4c', hair: '#6b4425', skin: '#f0c39b' };
+    const view = ch.fy > .55 ? 'front' : ch.fy < -.55 ? 'back' : (ch.fx < 0 ? 'left' : 'right');
+    const side = view === 'left' || view === 'right', dx = view === 'left' ? -1 : 1;
+    const sw = ch.moving ? Math.sin(ch.walk) : 0;
+    const counting = seeker && phase === 'hide';
+    const legW = .11 * u, hipY = hz(.4), shY = hz(.74), headY = hz(.9), hr = .15 * u;
+    // pernas e sapatos
+    for (const k of [-1, 1]) {
+      const fxo = side ? sw * k * .1 * u : k * .075 * u, lift = side ? 0 : Math.max(0, sw * k) * .05 * u;
+      limb(x + (side ? 0 : k * .07 * u), hipY, x + fxo, y0 - lift - legW * .3, legW, C.pants);
+      ctx.fillStyle = '#1d1b19';
+      ctx.beginPath(); ctx.ellipse(x + fxo + (side ? dx * .03 * u : 0), y0 - lift - legW * .2, legW * .7, legW * .4, 0, 0, TAU); ctx.fill();
+    }
+    const tw = side ? .24 * u : .36 * u, armW = .09 * u;
+    const hands = [];
+    for (const k of [-1, 1]) {
+      const sx = x + (side ? 0 : k * (tw / 2 + armW * .2));
+      let hx, hy;
+      if (carrying) { hx = x + k * .16 * u; hy = hz(1.02); }
+      else if (counting) { hx = x + k * .07 * u; hy = headY + .02 * u; }
+      else { hx = sx + (side ? -sw * k * .12 * u : 0); hy = hz(.44) + (side ? 0 : sw * k * .02 * u); }
+      hands.push([sx, shY + armW * .3, hx, hy, k]);
+    }
+    // de lado, o braço de trás vai antes do tronco
+    if (side) { const [sx, sy, hx, hy] = hands[0]; limb(sx, sy, hx, hy, armW, C.shirtD); ctx.fillStyle = C.skin; ctx.beginPath(); ctx.arc(hx, hy, armW * .55, 0, TAU); ctx.fill(); }
+    ctx.fillStyle = C.shirt; rrect(x - tw / 2, shY, tw, hipY - shY + legW * .3, .08 * u);
+    ctx.fillStyle = C.shirtD; rrect(x + (side ? -dx * tw * .1 : tw * .1), shY, tw * .4, hipY - shY + legW * .3, .06 * u);
+    if (!seeker) { ctx.fillStyle = '#f5c518'; ctx.fillRect(x - tw / 2, hz(.56), tw, Math.max(1, .045 * u)); }
+    // pescoço e cabeça
+    ctx.fillStyle = C.skin; ctx.fillRect(x - .04 * u, headY + hr * .6, .08 * u, shY - headY - hr * .4);
+    ctx.beginPath(); ctx.arc(x, headY, hr, 0, TAU); ctx.fill();
+    ctx.fillStyle = C.hair;
+    if (view === 'back') { ctx.beginPath(); ctx.arc(x, headY, hr * 1.02, 0, TAU); ctx.fill(); }
+    else if (view === 'front') { ctx.beginPath(); ctx.arc(x, headY - hr * .1, hr * 1.02, Math.PI * .95, Math.PI * 2.05); ctx.fill(); }
+    else { ctx.beginPath(); ctx.arc(x - dx * hr * .15, headY - hr * .05, hr * 1.02, dx > 0 ? Math.PI * .55 : -Math.PI * .45, dx > 0 ? Math.PI * 1.95 : Math.PI * .95); ctx.fill(); }
+    if (seeker) {
+      // boné vermelho com aba para onde ele olha
+      ctx.fillStyle = '#b8322a';
+      ctx.beginPath(); ctx.arc(x, headY - hr * .2, hr * 1.04, Math.PI, TAU); ctx.fill();
+      ctx.fillRect(x - hr * 1.04, headY - hr * .25, hr * 2.08, hr * .25);
+      if (view !== 'back') { ctx.beginPath(); ctx.ellipse(x + (side ? dx * hr * .9 : 0), headY - hr * .1, side ? hr * .6 : hr * .9, hr * .22, 0, 0, TAU); ctx.fill(); }
+    }
+    // rosto
+    if (view !== 'back' && !counting) {
+      ctx.fillStyle = '#1a1714';
+      const ey = headY + hr * .12;
+      if (view === 'front') { ctx.beginPath(); ctx.arc(x - hr * .38, ey, hr * .13, 0, TAU); ctx.arc(x + hr * .38, ey, hr * .13, 0, TAU); ctx.fill(); }
+      else { ctx.beginPath(); ctx.arc(x + dx * hr * .5, ey, hr * .13, 0, TAU); ctx.fill(); }
+    }
+    // braços da frente e mãos
+    for (const [sx, sy, hx, hy, k] of hands) {
+      if (side && k === -1) continue;
+      limb(sx, sy, hx, hy, armW, side ? C.shirt : C.shirt);
+      ctx.fillStyle = C.skin; ctx.beginPath(); ctx.arc(hx, hy, armW * .55, 0, TAU); ctx.fill();
+    }
+  }
+
+  function bubble(x, y, text, fill, ink) {
+    const r = S * .32;
+    ctx.fillStyle = fill;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x - r * .35, y + r * .8); ctx.lineTo(x, y + r * 1.4); ctx.lineTo(x + r * .35, y + r * .8); ctx.fill();
+    ctx.fillStyle = ink; ctx.font = '900 ' + Math.round(S * .46) + 'px "Big Shoulders Display", Impact, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y + S * .02);
+  }
+
+  function drawCone(s) {
+    const D = DIFF[diff], fov = D.fov * Math.PI / 180, a0 = Math.atan2(s.fy, s.fx), bl = blockers(s.z), n = 40;
+    const ox = X(s.x), oy = Y(s.y, s.z);
+    ctx.beginPath(); ctx.moveTo(ox, oy);
+    for (let i = 0; i <= n; i++) {
+      const a = a0 - fov + 2 * fov * i / n, d = rayDist(s, a, D.range, bl);
+      ctx.lineTo(X(s.x + Math.cos(a) * d), Y(s.y + Math.sin(a) * d, s.z));
+    }
+    ctx.closePath();
+    const gr = ctx.createRadialGradient(ox, oy, 0, ox, oy, D.range * S);
+    const a = s.sees ? .34 : .24;
+    gr.addColorStop(0, 'rgba(255,214,90,' + a + ')'); gr.addColorStop(1, 'rgba(255,214,90,0)');
+    ctx.fillStyle = gr; ctx.fill();
+  }
+
+  function draw() {
+    if (!st || !bg.width) return;
+    ctx.drawImage(bg, 0, 0);
+    // sombras numa passada só, para não escurecer onde se cruzam
+    ctx.fillStyle = 'rgba(35,28,18,.22)';
+    ctx.beginPath();
+    for (const w of WALLS) shadowPath(w, w.z);
+    for (const o of st.objs) shadowPath(o, o.k === 'ramp' ? .5 : 1);
+    ctx.fill();
+    for (const ch of [st.run, st.sek]) {
+      const g = foot(ch.x, ch.y);
+      ctx.fillStyle = 'rgba(35,28,18,.25)';
+      ctx.beginPath(); ctx.ellipse(X(ch.x + .1), Y(ch.y + .08, g), R * S * .95, R * S * .6, 0, 0, TAU); ctx.fill();
+    }
+    const live = phase === 'hide' || phase === 'seek';
+    if (phase === 'seek' || (phase === 'paused' && pausedFrom === 'seek') || (phase === 'over' && st.result === 'won')) drawCone(st.sek);
+    const r = st.run;
+    if (live && r.carry) drawGhost(ghost(), r.carry);
+
+    const near = live ? grabbable() : -1;
+    const items = [];
+    for (const w of WALLS) items.push({ k: w.y + w.h, f: () => drawWall(w) });
+    st.objs.forEach((o, i) => {
+      const mark = near === i ? 'near' : null;
+      items.push({ k: o.y + o.h, f: () => (o.k === 'ramp' ? drawRamp(o, mark, 0) : drawCrate(o, mark, 0)) });
+    });
+    for (const [ch, sk] of [[r, false], [st.sek, true]]) {
+      let k = ch.y + R * .3;
+      // em cima de algo: desenha depois do que está embaixo
+      if (ch.z > .5) for (const q of st.objs) if (distRect(ch.x, ch.y, q) < R) k = Math.max(k, q.y + q.h + .001);
+      items.push({ k, f: () => drawPerson(ch, sk, !sk && !!ch.carry) });
+      if (!sk && ch.carry) {
+        // o que ele carrega vai acima da cabeça
+        const o = ch.carry, c = Object.assign({}, o, { x: ch.x - o.w / 2, y: ch.y - o.h / 2 });
+        items.push({ k: k + .0005, f: () => (o.k === 'ramp' ? drawRamp(c, null, ch.z + 1.05) : drawCrate(c, null, ch.z + 1.05)) });
+      }
+    }
+    items.sort((a, b) => a.k - b.k);
+    for (const it of items) it.f();
+
+    const s = st.sek, sy = Y(s.y, s.z + 1.05) - S * .45;
+    if (phase === 'hide') {
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = '#2a2722'; ctx.lineWidth = S * .12; ctx.lineJoin = 'round';
+      ctx.font = '900 ' + Math.round(S * 1.1) + 'px "Big Shoulders Display", Impact, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const t = String(Math.ceil(st.left / 1000));
+      ctx.strokeText(t, X(s.x), sy - S * .3); ctx.fillText(t, X(s.x), sy - S * .3);
+    } else if (phase === 'seek' || phase === 'paused') {
+      if (s.sees) bubble(X(s.x), sy, '!', '#f5c518', '#231a00');
+      else if (s.state === 'investigate') bubble(X(s.x), sy, '?', '#f5f2ea', '#231a00');
+    }
+  }
+
+  /* ---------- interface ---------- */
+
+  const btn = (act, label, cls) => '<button type="button" class="btn' + (cls ? ' ' + cls : '') + '" data-act="' + act + '" data-fk="' + act + '">' + label + '</button>';
+  function seekerText() {
+    if (phase === 'menu') return 'Esperando';
+    if (phase === 'hide' || (phase === 'paused' && pausedFrom === 'hide')) return 'Contando';
+    if (phase === 'over') return st.result === 'won' ? 'Desistiu' : 'Te pegou!';
+    const s = st.sek;
+    if (s.sees) return 'Te viu!';
+    if (s.pushing) return 'Empurrando caixa';
+    if (s.state === 'investigate') return s.why === 'sniff' ? 'Farejou você' : 'Ouviu algo';
+    return 'Procurando';
+  }
+  function setText(id, txt) { if (shown[id] !== txt) { shown[id] = txt; $(id).textContent = txt; } }
+  function syncLive() {
+    setText('clock', fmt(st.left));
+    setText('seekerState', seekerText());
+    const alert = phase === 'seek' && st.sek.sees;
+    if (shown.alert !== alert) { shown.alert = alert; $('seekerState').classList.toggle('alert', alert); }
+  }
+  function sync() {
+    const live = phase === 'hide' || phase === 'seek';
+    const ph = phase === 'paused' ? pausedFrom : phase;
+    setText('phaseName', { menu: 'Menu', hide: 'Esconda-se', seek: 'Fuja!', over: 'Fim' }[ph] || '');
+    setText('tally', tally.w + ' × ' + tally.l);
+    readyBtn.hidden = phase !== 'hide';
+    pauseBtn.hidden = !(live || phase === 'paused');
+    pauseBtn.textContent = phase === 'paused' ? 'Continuar' : 'Pausar';
+    if (st) syncLive();
+    syncOverlay();
+  }
+  function syncOverlay() {
+    const fk = overlay.contains(document.activeElement) ? document.activeElement.dataset.fk : null;
+    let html = '';
+    if (phase === 'menu') {
+      const seg = Object.keys(DIFF).map(k => '<button type="button" data-act="diff" data-val="' + k + '" data-fk="diff-' + k + '" aria-pressed="' + (k === diff) + '">' + DIFF[k].name + '</button>').join('');
+      const snd = [[true, 'Ligado'], [false, 'Desligado']].map(([v, l]) => '<button type="button" data-act="sound" data-val="' + v + '" data-fk="sound-' + v + '" aria-pressed="' + (v === sound) + '">' + l + '</button>').join('');
+      html = '<div class="card wide"><h2 class="title">Pega-pega</h2>' +
+        '<ol class="rules">' +
+        '<li><span class="n">1</span><span><b>Um minuto para se esconder.</b> O pegador conta de olhos tapados no canto. Pegue caixas e rampas e coloque onde quiser para montar seu esconderijo.</span></li>' +
+        '<li><span class="n">2</span><span><b>Um minuto para fugir.</b> Ele vem te procurar. Se ele encostar em você, acabou.</span></li>' +
+        '</ol>' +
+        '<p class="small">Você levanta e coloca. O pegador só empurra, e caixa com outra coisa atrás não sai do lugar. Rampas sobem em caixas, para os dois: se deixar uma encostada no esconderijo, ele sobe e entra.</p>' +
+        '<div class="row"><span class="label">Pegador</span><div class="seg" role="group">' + seg + '</div></div>' +
+        '<div class="row"><span class="label">Som</span><div class="seg" role="group">' + snd + '</div></div>' +
+        '<div class="btns">' + btn('play', 'Jogar', 'primary') + '</div></div>';
+    } else if (phase === 'paused') {
+      html = '<div class="card"><h2>Pausa</h2><div class="btns">' + btn('resume', 'Continuar', 'primary') + btn('restart', 'Recomeçar') + btn('menu', 'Menu') + '</div></div>';
+    } else if (phase === 'over') {
+      const won = st.result === 'won';
+      html = '<div class="card"><h2>' + (won ? 'Você escapou!' : 'Te pegaram!') + '</h2>' +
+        '<p>' + (won ? 'Aguentou o minuto inteiro sem ser pego.' : 'Você aguentou ' + fmt(st.survived) + ' de 1:00 na fuga.') + '</p>' +
+        '<p class="small">Placar: você ' + tally.w + ' × ' + tally.l + ' pegador · ' + DIFF[diff].name + '</p>' +
+        '<div class="btns">' + btn('restart', 'Jogar de novo', 'primary') + btn('menu', 'Menu') + '</div></div>';
+    }
+    overlay.hidden = !html;
+    if (!html) return;
+    overlay.innerHTML = html;
+    if (fk) { const el = overlay.querySelector('[data-fk="' + fk + '"]'); if (el) el.focus(); }
+  }
+
+  overlay.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const a = b.dataset.act;
+    if (a === 'play' || a === 'restart') startRound();
+    else if (a === 'resume') resume();
+    else if (a === 'menu') toMenu();
+    else if (a === 'diff') { diff = b.dataset.val; store.set('pegapega.diff', diff); sync(); }
+    else if (a === 'sound') { sound = b.dataset.val === 'true'; store.set('pegapega.sound', sound); if (sound) beep('grab'); sync(); }
+  });
+  readyBtn.addEventListener('click', e => { startSeek(); if (e.detail) readyBtn.blur(); });
+  pauseBtn.addEventListener('click', e => { if (phase === 'paused') resume(); else pause(); if (e.detail) pauseBtn.blur(); });
+
+  function moveFocus(dir) {
+    const bs = [...overlay.querySelectorAll('button')];
+    if (!bs.length) return;
+    let i = bs.indexOf(document.activeElement);
+    if (i < 0) i = Math.max(0, bs.findIndex(b => b.classList.contains('primary')));
+    else i = (i + dir + bs.length) % bs.length;
+    bs[i].focus();
+  }
+
+  function beep(kind) {
+    if (!sound) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === 'suspended') actx.resume();
+      const notes = {
+        start: [[392, .08], [523, .1]], grab: [[660, .04]], drop: [[440, .04]], no: [[180, .07]],
+        whistle: [[1568, .12], [1318, .1], [1568, .22]], seen: [[880, .07], [1175, .09]],
+        caught: [[392, .12], [294, .12], [196, .28]], win: [[523, .09], [659, .09], [784, .09], [1046, .22]]
+      }[kind];
+      let t = actx.currentTime;
+      for (const [f, d] of notes) {
+        const o = actx.createOscillator(), v = actx.createGain();
+        o.type = kind === 'whistle' ? 'sine' : 'triangle'; o.frequency.value = f;
+        v.gain.setValueAtTime(.08, t); v.gain.exponentialRampToValueAtTime(.0001, t + d);
+        o.connect(v).connect(actx.destination); o.start(t); o.stop(t + d);
+        t += d + .015;
+      }
+    } catch (e) {}
+  }
+
+  addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = MOVE_KEYS[e.code];
+    const confirm = e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space';
+    if (confirm && e.target.closest && e.target.closest('button:not([tabindex="-1"])')) return;
+    if (!overlay.hidden) {
+      if (k) { e.preventDefault(); moveFocus(k === 'up' || k === 'left' ? -1 : 1); }
+      else if (confirm) { e.preventDefault(); if (phase === 'paused') resume(); else { const pb = overlay.querySelector('.primary'); if (pb) pb.click(); } }
+      else if (e.code === 'Escape' && phase === 'paused') { e.preventDefault(); resume(); }
+      return;
+    }
+    if (phase !== 'hide' && phase !== 'seek') return;
+    if (k) { e.preventDefault(); keys.add(k); }
+    else if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) grabOrPlace(); }
+    else if (e.code === 'KeyQ') { e.preventDefault(); if (!e.repeat) rotateCarry(-1); }
+    else if (e.code === 'KeyE' || e.code === 'KeyR') { e.preventDefault(); if (!e.repeat) rotateCarry(1); }
+    else if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); startSeek(); }
+    else if (e.code === 'Escape' || e.code === 'KeyP') { e.preventDefault(); pause(); }
+  });
+  addEventListener('keyup', e => { const k = MOVE_KEYS[e.code]; if (k) keys.delete(k); });
+
+  document.querySelectorAll('#pad [data-k]').forEach(b => {
+    const k = b.dataset.k;
+    const up = () => { keys.delete(k); b.classList.remove('down'); };
+    b.addEventListener('pointerdown', e => { e.preventDefault(); if (phase === 'hide' || phase === 'seek') { keys.add(k); b.classList.add('down'); } });
+    b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('pointerleave', up);
+  });
+  document.querySelectorAll('#pad [data-a]').forEach(b => b.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    if (b.dataset.a === 'grab') grabOrPlace(); else rotateCarry(1);
+  }));
+
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+  addEventListener('blur', () => { keys.clear(); pause(); });
+  addEventListener('resize', layout);
+  coarse.addEventListener('change', syncOverlay);
+  new ResizeObserver(layout).observe(fit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (st && bg.width) buildFloor(); });
+
+  function boot(data) {
+    newRound();
+    // versões antigas tinham paredes e outro mapa: só reaproveita estado salvo deste formato
+    if (data && data.st && data.st.run && 'carry' in data.st.run && data.phase) {
+      st = data.st;
+      buildWallGrid(); buildObjGrid();
+      phase = data.phase;
+      pausedFrom = data.pausedFrom || null;
+      if (phase === 'hide' || phase === 'seek') { pausedFrom = phase; phase = 'paused'; }
+    }
+    layout();
+    sync();
+    requestAnimationFrame(frame);
+  }
+  window.claude?.hot?.snapshot?.(() => ({ st, phase, pausedFrom }));
+  window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
+})();
+</script>

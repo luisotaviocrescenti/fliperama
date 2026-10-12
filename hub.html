@@ -1,0 +1,236 @@
+<style>
+/* Layout: título grande em cima e uma prateleira de cartões, um por jogo; vira uma coluna no celular */
+:root {
+  --page: #efeee9; --ink: #1d1c1a; --dim: #625f57; --line: #d8d5cc; --card: #fbfaf6;
+  --accent: #f2b705; --accent-ink: #231a00; --shadow: rgba(30, 28, 20, .2);
+  --font-display: "Big Shoulders Display", Impact, sans-serif;
+  --font-ui: "Atkinson Hyperlegible", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #121210; --ink: #ecebe5; --dim: #9a978e; --line: #2b2a26; --card: #1b1a17;
+    --accent: #f5c518; --accent-ink: #231a00; --shadow: rgba(0, 0, 0, .55);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #121210; --ink: #ecebe5; --dim: #9a978e; --line: #2b2a26; --card: #1b1a17;
+  --accent: #f5c518; --accent-ink: #231a00; --shadow: rgba(0, 0, 0, .55);
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  background: var(--page); color: var(--ink); font-family: var(--font-ui);
+  box-sizing: border-box; min-height: 100%; height: auto;
+  padding-inline: 16px; padding-block: 28px;
+  display: flex; justify-content: center;
+}
+.hub { width: 100%; max-width: 1080px; display: flex; flex-direction: column; gap: 22px; }
+.hub h1 { margin: 0; font: 900 clamp(52px, 9vw, 96px)/.85 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
+.lead { margin: 10px 0 0; color: var(--dim); font-size: 15px; }
+.shelf { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 18px; }
+.gcard {
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+  display: flex; flex-direction: column; box-shadow: 0 16px 32px -22px var(--shadow); min-width: 0;
+}
+.thumb { display: block; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; height: auto; }
+.gbody { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.gcard h2 { margin: 0; font: 900 34px/1 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
+.gcard p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--dim); max-width: 60ch; }
+.gcard .meta { font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.play {
+  margin-top: auto; align-self: flex-start;
+  font: 700 15px/1 var(--font-ui); background: var(--accent); color: var(--accent-ink);
+  border: 0; border-radius: 12px; padding: 13px 20px; cursor: pointer;
+}
+.play:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+</style>
+
+<script>
+// Fliperama: escolhe o jogo, monta ele na página e desmonta ao voltar
+const readNum = k => { try { return parseInt(localStorage.getItem(k) || '0', 10) || 0; } catch (e) { return 0; } };
+function seeded(a) { return () => { a = (a * 1103515245 + 12345) % 2147483648; return a / 2147483648; }; }
+
+function thumbCobrinha(c) {
+  const g = c.getContext('2d'), s = c.width / 16, rnd = seeded(7);
+  for (let y = 0; y < 9; y++) for (let x = 0; x < 16; x++) { g.fillStyle = (x + y) % 2 ? '#6a9c3c' : '#72a642'; g.fillRect(x * s, y * s, s, s); }
+  g.strokeStyle = 'rgba(40,90,20,.45)'; g.lineWidth = 2; g.lineCap = 'round';
+  for (let i = 0; i < 220; i++) { const x = rnd() * c.width, y = rnd() * c.height; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (rnd() - .5) * 4, y - 5 - rnd() * 4); g.stroke(); }
+  for (let i = 0; i < 9; i++) {
+    const x = rnd() * c.width, y = rnd() * c.height;
+    g.fillStyle = '#fbfaf3'; for (let k = 0; k < 6; k++) { g.beginPath(); g.arc(x + Math.cos(k) * 4, y + Math.sin(k) * 4, 2.6, 0, 7); g.fill(); }
+    g.fillStyle = '#f0b51f'; g.beginPath(); g.arc(x, y, 2.4, 0, 7); g.fill();
+  }
+  // maçã
+  const ax = 12.6 * s, ay = 3.5 * s, ar = .34 * s;
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(ax + 4, ay + 5, ar, ar * .85, 0, 0, 7); g.fill();
+  const gr = g.createRadialGradient(ax - ar * .35, ay - ar * .35, 2, ax, ay, ar * 1.1);
+  gr.addColorStop(0, '#ff8f6c'); gr.addColorStop(.4, '#df3329'); gr.addColorStop(1, '#8c1313');
+  g.fillStyle = gr; g.beginPath(); g.arc(ax, ay, ar, 0, 7); g.fill();
+  g.fillStyle = '#4f9a2e'; g.beginPath(); g.ellipse(ax + 6, ay - ar * .9, 8, 4, -.5, 0, 7); g.fill();
+  // cobra-do-milho
+  const pts = [[1.6, 6.6], [5.5, 6.6], [5.5, 4.6], [9.5, 4.6], [9.5, 3.5], [11.6, 3.5]].map(([x, y]) => [x * s, y * s]);
+  const path = () => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); };
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  g.save(); g.translate(4, 6); path(); g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = .6 * s; g.stroke(); g.restore();
+  path(); g.strokeStyle = '#2c130a'; g.lineWidth = .66 * s; g.stroke();
+  path(); g.strokeStyle = '#b2551f'; g.lineWidth = .58 * s; g.stroke();
+  path(); g.strokeStyle = '#e08a3e'; g.lineWidth = .4 * s; g.stroke();
+  path(); g.setLineDash([.24 * s, .64 * s]); g.lineCap = 'butt'; g.strokeStyle = '#a3341a'; g.lineWidth = .46 * s; g.stroke(); g.setLineDash([]);
+  const [hx, hy] = pts[pts.length - 1];
+  const ell = (x, y, rx, ry, col) => { g.fillStyle = col; g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, 7); g.fill(); };
+  ell(hx + .06 * s, hy, .44 * s, .36 * s, '#2c130a'); ell(hx + .06 * s, hy, .41 * s, .33 * s, '#b2551f'); ell(hx + .09 * s, hy, .3 * s, .22 * s, '#e08a3e');
+  for (const k of [-1, 1]) { ell(hx + .2 * s, hy + k * .2 * s, .075 * s, .075 * s, '#e0a634'); ell(hx + .21 * s, hy + k * .2 * s, .04 * s, .04 * s, '#120804'); }
+  g.strokeStyle = '#cc2442'; g.lineWidth = 3; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(hx + .46 * s, hy); g.lineTo(hx + .72 * s, hy); g.lineTo(hx + .82 * s, hy - 6); g.moveTo(hx + .72 * s, hy); g.lineTo(hx + .82 * s, hy + 6); g.stroke();
+}
+
+function thumbPega(c) {
+  const g = c.getContext('2d'), s = c.width / 16, E = .62 * s;
+  g.fillStyle = '#bdb7ab'; g.fillRect(0, 0, c.width, c.height);
+  g.strokeStyle = 'rgba(70,62,50,.22)'; g.lineWidth = 2; g.beginPath();
+  for (let x = 4; x < 16; x += 4) { g.moveTo(x * s, 0); g.lineTo(x * s, c.height); }
+  for (let y = 4; y < 9; y += 4) { g.moveTo(0, y * s); g.lineTo(c.width, y * s); }
+  g.stroke();
+  // cone de visão do pegador
+  const sx = 12.6 * s, sy = 5.4 * s;
+  const cg = g.createRadialGradient(sx, sy, 0, sx, sy, 8 * s);
+  cg.addColorStop(0, 'rgba(255,214,90,.42)'); cg.addColorStop(1, 'rgba(255,214,90,0)');
+  g.fillStyle = cg; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx - 8 * s, sy - 4.2 * s); g.lineTo(sx - 8 * s, sy + 3.6 * s); g.closePath(); g.fill();
+  const crate = (x, y, w, h, base) => {
+    const x0 = x * s, top = y * s - E - (base || 0), bot = (y + h) * s - E - (base || 0), gnd = (y + h) * s - (base || 0);
+    if (!base) { g.fillStyle = 'rgba(35,28,18,.22)'; g.fillRect(x0 + .25 * s, y * s + .2 * s, w * s, h * s); }
+    g.fillStyle = '#93622f'; g.fillRect(x0, bot, w * s, gnd - bot);
+    g.fillStyle = '#c99459'; g.fillRect(x0, top, w * s, bot - top);
+    g.strokeStyle = '#6b4320'; g.lineWidth = 2.5; g.strokeRect(x0 + 1, top + 1, w * s - 2, bot - top - 2);
+    g.strokeStyle = 'rgba(95,60,25,.55)'; g.beginPath(); g.moveTo(x0 + 6, top + 6); g.lineTo(x0 + w * s - 6, bot - 6); g.stroke();
+  };
+  const fig = (x, y, shirt, seeker, carry) => {
+    const px = x * s, py = y * s, u = s;
+    g.fillStyle = 'rgba(30,25,15,.25)'; g.beginPath(); g.ellipse(px + 4, py + 3, .34 * u, .2 * u, 0, 0, 7); g.fill();
+    g.fillStyle = seeker ? '#3b3030' : '#2e3a4c'; g.fillRect(px - .12 * u, py - .4 * E, .09 * u, .4 * E); g.fillRect(px + .03 * u, py - .4 * E, .09 * u, .4 * E);
+    g.fillStyle = shirt; g.fillRect(px - .18 * u, py - .78 * E, .36 * u, .42 * E);
+    g.strokeStyle = shirt; g.lineWidth = .09 * u; g.lineCap = 'round';
+    g.beginPath();
+    if (carry) { g.moveTo(px - .16 * u, py - .74 * E); g.lineTo(px - .16 * u, py - 1.05 * E); g.moveTo(px + .16 * u, py - .74 * E); g.lineTo(px + .16 * u, py - 1.05 * E); }
+    else { g.moveTo(px - .22 * u, py - .72 * E); g.lineTo(px - .24 * u, py - .44 * E); g.moveTo(px + .22 * u, py - .72 * E); g.lineTo(px + .24 * u, py - .44 * E); }
+    g.stroke();
+    const hyy = py - .92 * E;
+    g.fillStyle = seeker ? '#d9a27c' : '#f0c39b'; g.beginPath(); g.arc(px, hyy, .15 * u, 0, 7); g.fill();
+    g.fillStyle = seeker ? '#b8322a' : '#6b4425'; g.beginPath(); g.arc(px, hyy - .03 * u, .155 * u, Math.PI, 2 * Math.PI); g.fill();
+    if (seeker) { g.beginPath(); g.ellipse(px, hyy - .02 * u, .14 * u, .035 * u, 0, 0, 7); g.fill(); }
+    g.fillStyle = '#1a1714'; g.beginPath(); g.arc(px - .055 * u, hyy + .02 * u, .02 * u, 0, 7); g.arc(px + .055 * u, hyy + .02 * u, .02 * u, 0, 7); g.fill();
+    if (carry) crate(x - .5, y - .5, 1, 1, 1.05 * E);
+  };
+  // esconderijo em cata-vento e uma rampa
+  crate(3, 3, 2, 1); crate(5, 3, 1, 2); crate(3, 4, 1, 2); crate(4, 5, 2, 1);
+  const rx = 9.4 * s, ry = 1.6 * s;
+  g.fillStyle = '#7d7466'; g.beginPath(); g.moveTo(rx, ry + s); g.lineTo(rx + 2 * s, ry + s); g.lineTo(rx + 2 * s, ry + s - E); g.closePath(); g.fill();
+  const rg = g.createLinearGradient(rx, 0, rx + 2 * s, 0); rg.addColorStop(0, '#a99d86'); rg.addColorStop(1, '#ddd2b9');
+  g.fillStyle = rg; g.beginPath(); g.moveTo(rx, ry); g.lineTo(rx + 2 * s, ry - E); g.lineTo(rx + 2 * s, ry + s - E); g.lineTo(rx, ry + s); g.closePath(); g.fill();
+  g.strokeStyle = '#e0a21b'; g.lineWidth = 4; g.lineCap = 'round';
+  for (const k of [.5, 1, 1.5]) { const x = rx + k * s, y = ry + .5 * s - k / 2 * E; g.beginPath(); g.moveTo(x - 6, y - 12); g.lineTo(x + 4, y); g.lineTo(x - 6, y + 12); g.stroke(); }
+  crate(13, 7, 1, 1);
+  fig(7.6, 6.4, '#2f86c9', false, true);
+  fig(12.6, 5.4, '#d1463a', true, false);
+}
+
+function thumbAbismo(c) {
+  const g = c.getContext('2d'), W = c.width, H = c.height, cx = W / 2, cy = H / 2;
+  g.fillStyle = '#17181c'; g.fillRect(0, 0, W, cy);
+  const fg = g.createLinearGradient(0, cy, 0, H); fg.addColorStop(0, '#141211'); fg.addColorStop(1, '#4a4440');
+  g.fillStyle = fg; g.fillRect(0, cy, W, H - cy);
+  const bx0 = cx - 80, bx1 = cx + 80, by0 = cy - 56, by1 = cy + 56;
+  const wall = (pts, c1, c2, x0, x1) => {
+    const gr = g.createLinearGradient(x0, 0, x1, 0); gr.addColorStop(0, c1); gr.addColorStop(1, c2);
+    g.fillStyle = gr; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill();
+  };
+  wall([[0, -10], [bx0, by0], [bx0, by1], [0, H + 10]], '#6d7178', '#1e2024', 0, bx0);
+  wall([[W, -10], [bx1, by0], [bx1, by1], [W, H + 10]], '#6d7178', '#1e2024', W, bx1);
+  g.strokeStyle = 'rgba(0,0,0,.45)'; g.lineWidth = 3;
+  for (const k of [.3, .55, .75, .88]) {
+    for (const [ex, ey0, ey1, sx] of [[bx0, by0, by1, 0], [bx1, by0, by1, W]]) {
+      const x = sx + (ex - sx) * k; g.beginPath(); g.moveTo(x, -10 + (ey0 + 10) * k); g.lineTo(x, H + 10 + (ey1 - H - 10) * k); g.stroke();
+    }
+  }
+  g.fillStyle = 'rgba(236,234,214,.85)';
+  for (const k of [.2, .45, .65, .8]) { const y = cy - (cy - 0) * (1 - k) * .9 - 6, w = 70 * (1 - k) + 10; g.fillRect(cx - w / 2, y, w, 6 * (1 - k) + 2); }
+  // porta no fundo com faixa de atenção
+  g.fillStyle = '#5e605c'; g.fillRect(bx0, by0, bx1 - bx0, by1 - by0);
+  for (let i = 0; i < 12; i++) { g.fillStyle = i % 2 ? '#d9a821' : '#1d1d1b'; g.beginPath(); const x = bx0 + i * 16; g.moveTo(x, cy - 8); g.lineTo(x + 16, cy - 8); g.lineTo(x + 8, cy + 8); g.lineTo(x - 8, cy + 8); g.fill(); }
+  // criatura com bola de fogo
+  const mx = cx + 40, my = cy + 40;
+  g.fillStyle = '#5c2e1c'; g.fillRect(mx - 16, my - 10, 10, 34); g.fillRect(mx + 6, my - 10, 10, 34);
+  g.fillStyle = '#b0603a'; g.beginPath(); g.ellipse(mx, my - 26, 22, 26, 0, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(mx, my - 62, 13, 15, 0, 0, 7); g.fill();
+  g.strokeStyle = '#e2d6b4'; g.lineWidth = 5; g.beginPath(); g.moveTo(mx - 9, my - 72); g.lineTo(mx - 18, my - 88); g.moveTo(mx + 9, my - 72); g.lineTo(mx + 18, my - 88); g.stroke();
+  g.fillStyle = '#ff4630'; g.fillRect(mx - 7, my - 66, 4, 3); g.fillRect(mx + 3, my - 66, 4, 3);
+  const fb = g.createRadialGradient(cx - 40, cy + 6, 2, cx - 40, cy + 6, 26); fb.addColorStop(0, '#fff6c8'); fb.addColorStop(.4, '#ffb03a'); fb.addColorStop(1, 'rgba(255,90,20,0)');
+  g.fillStyle = fb; g.beginPath(); g.arc(cx - 40, cy + 6, 26, 0, 7); g.fill();
+  // escopeta na mão
+  const gx = cx, gy = H;
+  const fl = g.createRadialGradient(gx, gy - 150, 4, gx, gy - 150, 40); fl.addColorStop(0, '#fffbe0'); fl.addColorStop(.5, '#ffb030'); fl.addColorStop(1, 'rgba(255,120,20,0)');
+  g.fillStyle = fl; g.beginPath(); g.arc(gx, gy - 150, 40, 0, 7); g.fill();
+  g.fillStyle = '#46484e'; g.fillRect(gx - 16, gy - 150, 32, 150);
+  g.fillStyle = '#7c8088'; g.fillRect(gx - 14, gy - 150, 5, 150);
+  g.fillStyle = '#1c1c20'; g.beginPath(); g.ellipse(gx - 7, gy - 148, 5, 3, 0, 0, 7); g.ellipse(gx + 7, gy - 148, 5, 3, 0, 0, 7); g.fill();
+  g.fillStyle = '#78482a'; g.fillRect(gx - 26, gy - 92, 52, 26);
+  g.fillStyle = '#d6a078'; g.beginPath(); g.ellipse(gx - 32, gy - 78, 16, 18, 0, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(gx + 10, gy - 6, 40, 22, 0, 0, 7); g.fill();
+}
+
+const GAME_LIST = [
+  { id: 'cobrinha', name: 'Cobrinha', mount: mountCobrinha, thumb: thumbCobrinha,
+    desc: 'Coma maçãs no jardim, cresça e não bata em nada. Cinco modos de jogo e ciclo de dia e noite.',
+    meta: () => 'Recorde no Clássico: ' + readNum('cobrinha.best') },
+  { id: 'pega-pega', name: 'Pega-pega', mount: mountPegaPega, thumb: thumbPega,
+    desc: 'Um minuto para montar o esconderijo com caixas e rampas, um minuto para fugir do pegador.',
+    meta: () => 'Placar: você ' + readNum('pegapega.w') + ' × ' + readNum('pegapega.l') + ' pegador' },
+  { id: 'abismo', name: 'Abismo', mount: mountAbismo, thumb: thumbAbismo,
+    desc: 'Tiro em primeira pessoa numa estação tomada por criaturas. Ache os cartões, abra as portas e chegue à saída.',
+    meta: () => { const b = readNum('abismo.best.normal'); return b ? 'Melhor tempo no Normal: ' + Math.floor(b / 60) + ':' + String(b % 60).padStart(2, '0') : 'Ainda ninguém chegou à saída.'; } }
+];
+const GAME_BY_ID = {};
+GAME_LIST.forEach(g => { GAME_BY_ID[g.id] = g; });
+const app = document.getElementById('app'), screenCss = document.getElementById('screen-css');
+let current = null;
+
+function closeGame() {
+  if (!current) return;
+  try { current.inst.unmount(); } catch (e) {}
+  current = null;
+}
+function showHub(focusId) {
+  closeGame();
+  screenCss.textContent = document.getElementById('css-hub').content.querySelector('style').textContent;
+  app.innerHTML =
+    '<main class="hub"><header><h1>Fliperama</h1><p class="lead">' + GAME_LIST.length + ' jogos. Escolha um para jogar.</p></header>' +
+    '<div class="shelf">' + GAME_LIST.map(g =>
+      '<article class="gcard"><canvas class="thumb" width="640" height="360" data-thumb="' + g.id + '" aria-hidden="true"></canvas>' +
+      '<div class="gbody"><h2>' + g.name + '</h2><p>' + g.desc + '</p><p class="meta">' + g.meta() + '</p>' +
+      '<button type="button" class="play" data-game="' + g.id + '">Jogar ' + g.name + '</button></div></article>').join('') +
+    '</div></main>';
+  app.querySelectorAll('canvas[data-thumb]').forEach(c => { try { GAME_BY_ID[c.dataset.thumb].thumb(c); } catch (e) {} });
+  app.querySelectorAll('[data-game]').forEach(b => b.addEventListener('click', () => openGame(b.dataset.game)));
+  window.scrollTo(0, 0);
+  if (focusId) { const b = app.querySelector('[data-game="' + focusId + '"]'); if (b) b.focus(); }
+}
+function openGame(id, data) {
+  const g = GAME_BY_ID[id];
+  if (!g) { showHub(); return; }
+  closeGame();
+  screenCss.textContent = document.getElementById('css-' + id).content.querySelector('style').textContent;
+  app.innerHTML = document.getElementById('html-' + id).innerHTML;
+  const back = document.createElement('button');
+  back.type = 'button'; back.className = 'backbtn'; back.textContent = '← Jogos';
+  back.addEventListener('click', () => showHub(id));
+  (app.querySelector('.wrap') || app).prepend(back);
+  window.scrollTo(0, 0);
+  current = { id, inst: g.mount(data) };
+}
+
+window.claude?.hot?.snapshot?.(() => ({ game: current ? current.id : null, data: current ? current.inst.snapshot() : null }));
+const startApp = d => { if (d && d.game && GAME_BY_ID[d.game]) openGame(d.game, d.data); else showHub(); };
+window.claude?.hot?.ready ? window.claude.hot.ready(startApp) : startApp(window.claude?.hot?.data ?? {});
+</script>
