@@ -74,3 +74,9 @@ const out =
 
 fs.writeFileSync(path.join(dir, 'fliperama.html'), out);
 console.log('fliperama.html', (out.length / 1024).toFixed(1) + ' KB');
+
+// entrada do GitHub Pages: o mesmo Fliperama, com o cabeçalho de página que o claude.ai acrescentava sozinho
+fs.writeFileSync(path.join(dir, 'index.html'),
+  '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">' +
+  out + '</body></html>');
+console.log('index.html');
