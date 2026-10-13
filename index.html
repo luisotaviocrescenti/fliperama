@@ -1,63 +1,229 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0"><title>Fliperama</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;900&family=Bricolage+Grotesque:opsz,wght@12..96,700..800&family=Teko:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;900&family=Bricolage+Grotesque:opsz,wght@12..96,700..800&family=Bungee&family=Silkscreen:wght@400;700&family=Teko:wght@500;600;700&display=swap">
 <style>
 [hidden] { display: none !important; }
-/* botão de voltar ao Fliperama, usa as cores de cada jogo */
-.backbtn { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; font: 700 13px/1 "Atkinson Hyperlegible", system-ui, sans-serif; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 9px 15px; cursor: pointer; }
-.backbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+<style id="hub-css">
+/* Layout: um gabinete de fliperama visto de frente, da altura da janela. Letreiro iluminado em cima,
+   a tela de tubo no meio (onde ficam o menu e os jogos) e o painel com alavanca e botões embaixo. */
+:root {
+  --cab-room: #0e0b14;      /* carpete escuro do salão */
+  --cab-body: #1d1828;      /* fórmica do gabinete */
+  --cab-body-hi: #2b2439;
+  --cab-trim: #f5c518;      /* friso amarelo, o mesmo destaque dos jogos */
+  --cab-hot: #ff4f8b;
+  --cab-cool: #45d4ff;
+  --cab-tube: #05060a;
+  --cab-phos: #f4f0e4;      /* texto de fósforo */
+  --cab-dim: #9a93ad;
+  --cab-sign-ink: #22122b;
+  --cab-red: #e8322f;
+  --cab-grey: #cfcad8;
+  --cab-font-sign: "Bungee", "Arial Black", Impact, sans-serif;
+  --cab-font-pixel: "Silkscreen", "Courier New", monospace;
+  --cab-font-ui: "Atkinson Hyperlegible", system-ui, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  margin: 0; box-sizing: border-box; color: var(--cab-phos); font-family: var(--cab-font-ui);
+  background: radial-gradient(ellipse at 50% 35%, rgba(14, 11, 20, 0) 25%, rgba(6, 5, 9, .82) 100%), var(--cab-carpet, none), var(--cab-room);
+  padding-inline: 16px; padding-block: 14px 0;
+  display: flex; justify-content: center;
+}
+#app { width: 100%; max-width: 1040px; height: 100%; min-height: 540px; display: flex; }
+
+.cab {
+  flex: 1; min-width: 0; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, var(--cab-body-hi), var(--cab-body) 30%);
+  border: 4px solid var(--cab-trim); border-bottom: 0; border-radius: 22px 22px 0 0;
+  box-shadow: 0 0 0 3px #07060a, 0 30px 80px rgba(0, 0, 0, .7);
+}
+
+/* letreiro */
+.cab-marquee {
+  position: relative; overflow: hidden; margin: 10px 10px 0; border-radius: 12px;
+  padding: clamp(8px, 1.6vh, 16px) 16px clamp(10px, 1.8vh, 18px); text-align: center;
+  background: linear-gradient(180deg, #ffe066 0%, #ffab3d 48%, #ff5d8f 100%);
+  box-shadow: 0 0 0 3px #07060a, 0 0 42px rgba(255, 150, 60, .4), inset 0 0 34px rgba(255, 255, 255, .45);
+}
+.cab-marquee::before { /* faixas de pôr do sol do letreiro */
+  content: ""; position: absolute; inset: 52% 0 0; pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(34, 18, 43, 0) 0 6px, rgba(34, 18, 43, .16) 6px 9px);
+}
+.cab-mq-title {
+  position: relative; margin: 0; color: var(--cab-sign-ink);
+  font: 400 clamp(34px, 6.6vw, 70px)/.92 var(--cab-font-sign); letter-spacing: .05em;
+  text-shadow: 0 3px 0 rgba(255, 255, 255, .5), 0 -1px 0 rgba(34, 18, 43, .4);
+}
+.cab-mq-sub {
+  position: relative; margin: 6px 0 0; color: var(--cab-sign-ink);
+  font: 700 clamp(10px, 1.3vw, 13px)/1 var(--cab-font-pixel); letter-spacing: .22em;
+}
+
+/* moldura e tubo */
+.cab-bezel {
+  flex: 1; min-height: 0; display: flex; margin: 12px 10px 0;
+  padding: clamp(10px, 2vh, 22px) clamp(10px, 2.4vw, 28px);
+  background: #09080d; border-radius: 12px 12px 4px 4px;
+  box-shadow: inset 0 0 0 2px rgba(255, 79, 139, .55), inset 0 0 0 7px #09080d, inset 0 0 0 8px rgba(69, 212, 255, .35);
+}
+.cab-tube {
+  position: relative; flex: 1; min-width: 0; overflow: hidden;
+  border-radius: 3.2% / 4.6%; background: var(--cab-tube);
+  box-shadow: 0 0 0 3px #000, 0 0 30px rgba(69, 212, 255, .12);
+}
+.cab-view { position: absolute; inset: 0; overflow: auto; container-type: size; }
+.cab-glass {
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background:
+    linear-gradient(118deg, rgba(255, 255, 255, .08) 0%, rgba(255, 255, 255, 0) 26%),
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, .24) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, .6) 100%);
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, .7);
+}
+.cab-tube.is-game .cab-glass { opacity: .5; }
+.cab-view.is-off { animation: cab-off .2s ease-in forwards; }
+.cab-view.is-on { animation: cab-on .32s ease-out; }
+@keyframes cab-off { 0% { transform: none; filter: none; } 70% { transform: scale(1, .015); filter: brightness(3); } 100% { transform: scale(0, .01); filter: brightness(5); } }
+@keyframes cab-on { 0% { transform: scale(1, .01); filter: brightness(5); } 45% { transform: scale(1, .03); filter: brightness(2); } 100% { transform: none; filter: none; } }
+
+/* menu dentro do tubo */
+.cab-menu {
+  box-sizing: border-box; min-height: 100%; display: flex; flex-direction: column; justify-content: center;
+  gap: clamp(10px, 4cqh, 28px); padding: clamp(14px, 4cqh, 34px) clamp(14px, 4cqw, 40px);
+  font-family: var(--cab-font-pixel); text-shadow: 0 0 6px rgba(244, 240, 228, .35);
+}
+.cab-hud { display: flex; justify-content: space-between; gap: 12px; font-size: clamp(10px, 1.6cqw, 14px); letter-spacing: .14em; color: var(--cab-dim); }
+.cab-hud b { font-weight: 700; color: var(--cab-phos); }
+.cab-hud-mid { color: var(--cab-cool); text-shadow: 0 0 8px rgba(69, 212, 255, .6); }
+.cab-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 3cqw, 30px); width: min(100%, 170cqh); align-self: center; }
+.cab-tile {
+  display: flex; flex-direction: column; align-items: stretch; gap: clamp(8px, 1.6cqh, 14px);
+  background: none; border: 0; padding: 0; color: var(--cab-dim); cursor: pointer; text-align: center;
+  font: 700 clamp(12px, 2.3cqw, 21px)/1 var(--cab-font-pixel); letter-spacing: .06em; text-transform: uppercase; text-shadow: inherit;
+}
+.cab-shot { display: block; padding: 4px; background: #000; border: 3px solid #2e2840; transition: transform .15s, border-color .15s; }
+.cab-shot canvas { display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 16 / 9; image-rendering: pixelated; filter: saturate(.5) brightness(.55); transition: filter .15s; }
+.cab-tname::before { content: "▶ "; visibility: hidden; color: var(--cab-hot); }
+.cab-tile[aria-current="true"] { color: var(--cab-trim); text-shadow: 0 0 10px rgba(245, 197, 24, .55); }
+.cab-tile[aria-current="true"] .cab-shot { border-color: var(--cab-trim); transform: translateY(-4px); box-shadow: 0 0 22px rgba(245, 197, 24, .4); }
+.cab-tile[aria-current="true"] canvas { filter: none; }
+.cab-tile[aria-current="true"] .cab-tname::before { visibility: visible; animation: cab-blink 1s steps(1) infinite; }
+.cab-tile:focus { outline: none; }
+.cab-tile:focus-visible .cab-shot { outline: 2px dashed var(--cab-cool); outline-offset: 4px; }
+.cab-info { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; min-height: 2.6em; }
+.cab-desc { margin: 0; flex: 1 1 320px; min-width: 0; max-width: 62ch; font: 400 clamp(13px, 1.9cqw, 16px)/1.45 var(--cab-font-ui); color: var(--cab-phos); text-shadow: none; }
+.cab-rec { margin: 0; display: flex; flex-direction: column; gap: 6px; text-align: right; font-size: clamp(10px, 1.5cqw, 13px); letter-spacing: .14em; color: var(--cab-dim); }
+.cab-rec b { font-size: clamp(18px, 3.4cqw, 30px); letter-spacing: .04em; color: var(--cab-hot); text-shadow: 0 0 10px rgba(255, 79, 139, .55); font-variant-numeric: tabular-nums; }
+.cab-press { margin: 0; text-align: center; font-size: clamp(14px, 2.6cqw, 24px); letter-spacing: .2em; color: var(--cab-trim); text-shadow: 0 0 12px rgba(245, 197, 24, .6); }
+.cab-press span { animation: cab-blink 1.1s steps(1) infinite; }
+.cab-keys { margin: -6px 0 0; text-align: center; font-size: clamp(9px, 1.4cqw, 12px); letter-spacing: .14em; color: var(--cab-dim); }
+@keyframes cab-blink { 50% { opacity: 0; } }
+
+@container (max-width: 560px) {
+  .cab-tiles { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .cab-tile { flex-direction: row; align-items: center; gap: 14px; text-align: left; font-size: 15px; }
+  .cab-shot { flex: 0 0 42%; padding: 3px; border-width: 2px; }
+  .cab-tile[aria-current="true"] .cab-shot { transform: translateX(4px); }
+  .cab-hud-mid { display: none; }
+  .cab-rec { text-align: left; }
+}
+@container (max-height: 360px) and (min-width: 561px) { .cab-desc { display: none; } .cab-info { min-height: 0; justify-content: flex-end; } }
+
+/* jogo dentro do tubo: o nome já está no letreiro e as instruções vão impressas no painel,
+   então o título e as dicas do jogo somem, e letreiro e painel encolhem para a tela crescer */
+.cab-view > .cab-game { padding-block: 12px; }
+.cab-view > .cab-game h1, .cab-view > .cab-game .hint { display: none; }
+.cab.is-playing .cab-marquee { padding-block: 6px 8px; }
+.cab.is-playing .cab-mq-title { font-size: clamp(24px, 3.4vw, 38px); }
+.cab.is-playing .cab-mq-sub { display: block; margin-top: 4px; }
+.cab.is-playing .cab-bezel { padding: 8px 12px; }
+.cab.is-playing .cab-panel { padding-block: 8px 12px; }
+.cab.is-playing .cab-stick { width: 84px; height: 84px; }
+.cab.is-playing .cab-plate { inset: 14px; }
+.cab.is-playing .cab-ball { width: 36px; height: 36px; margin: -24px 0 0 -18px; }
+.cab.is-playing .cab-dir { width: 24px; height: 24px; font-size: 9px; }
+.cab.is-playing .cab-cap { width: 48px; height: 48px; }
+.cab.is-playing .cab-exit .cab-cap { width: 40px; height: 40px; }
+.cab-decal.is-hint { font: 400 13px/1.9 var(--cab-font-ui); letter-spacing: 0; text-align: left; color: var(--cab-dim); max-width: 70ch; }
+.cab-decal kbd { font: 700 11px/1 var(--cab-font-ui); color: var(--cab-phos); border: 1px solid currentColor; border-radius: 4px; padding: 2px 5px; }
+
+/* painel de controle */
+.cab-panel {
+  position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px 28px;
+  margin: 14px -18px 0; padding: clamp(10px, 1.8vh, 18px) clamp(18px, 4vw, 44px) clamp(14px, 2.2vh, 22px);
+  background: linear-gradient(180deg, #342b49 0%, var(--cab-body) 100%);
+  border-top: 4px solid var(--cab-trim); border-radius: 16px 16px 0 0;
+  box-shadow: 0 0 0 3px #07060a, 0 -14px 30px rgba(0, 0, 0, .4);
+}
+.cab-panel::before { /* decalque listrado do painel */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: repeating-linear-gradient(-55deg, rgba(255, 79, 139, 0) 0 22px, rgba(255, 79, 139, .07) 22px 26px, rgba(69, 212, 255, 0) 26px 34px, rgba(69, 212, 255, .06) 34px 37px);
+}
+.cab-stick { position: relative; width: 112px; height: 112px; flex: none; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); place-items: center; }
+.cab-plate { position: absolute; inset: 22px; border-radius: 50%; background: radial-gradient(circle at 50% 40%, #241d33, #0b090f 70%); box-shadow: 0 0 0 2px #3f3555, inset 0 4px 10px rgba(0, 0, 0, .8); }
+.cab-ball {
+  position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -30px 0 0 -23px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #ff9c8f 0, var(--cab-red) 42%, #7d1010 100%);
+  box-shadow: 0 10px 0 -2px #4d0b0b, 0 14px 16px rgba(0, 0, 0, .55);
+  transform: translate(calc(var(--tx, 0) * 12px), calc(var(--ty, 0) * 12px)); transition: transform .07s;
+  pointer-events: none;
+}
+.cab-ball::before { content: ""; position: absolute; left: 50%; top: 100%; width: 10px; height: 18px; margin-left: -5px; background: linear-gradient(90deg, #6d6a75, #cfcbd6, #6d6a75); }
+.cab-dir {
+  position: relative; z-index: 1; width: 30px; height: 30px; padding: 0; border-radius: 50%; cursor: pointer;
+  border: 0; background: rgba(255, 255, 255, .06); color: var(--cab-dim); font: 700 11px/1 var(--cab-font-pixel);
+}
+.cab-dir:hover { color: var(--cab-phos); background: rgba(255, 255, 255, .12); }
+.cab-dir[data-dir="up"] { grid-area: 1 / 2; } .cab-dir[data-dir="left"] { grid-area: 2 / 1; }
+.cab-dir[data-dir="right"] { grid-area: 2 / 3; } .cab-dir[data-dir="down"] { grid-area: 3 / 2; }
+.cab-decal { position: relative; margin: 0; flex: 1; min-width: 0; text-align: center; font: 700 clamp(10px, 1.3vw, 13px)/1.6 var(--cab-font-pixel); letter-spacing: .16em; color: var(--cab-dim); }
+.cab-decal b { color: var(--cab-phos); font-weight: 700; }
+.cab-btns { position: relative; display: flex; align-items: flex-end; gap: clamp(16px, 3vw, 30px); }
+.cab-btn { display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 0; background: none; border: 0; cursor: pointer; color: var(--cab-phos); font: 700 12px/1 var(--cab-font-pixel); letter-spacing: .14em; }
+.cab-cap {
+  display: block; width: 60px; height: 60px; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #ff9c8f 0, var(--cab-red) 46%, #8b1212 100%);
+  box-shadow: 0 7px 0 #520b0b, 0 10px 14px rgba(0, 0, 0, .5), inset 0 -4px 8px rgba(0, 0, 0, .3);
+  transition: transform .06s, box-shadow .06s;
+}
+.cab-exit .cab-cap { width: 44px; height: 44px; background: radial-gradient(circle at 36% 30%, #fff, var(--cab-grey) 46%, #77718a 100%); box-shadow: 0 6px 0 #48435a, 0 9px 12px rgba(0, 0, 0, .5), inset 0 -4px 8px rgba(0, 0, 0, .2); }
+.cab-btn:active:not(:disabled) .cab-cap, .cab-btn.is-down .cab-cap { transform: translateY(5px); box-shadow: 0 2px 0 #520b0b, 0 3px 6px rgba(0, 0, 0, .5); }
+.cab-exit:active:not(:disabled) .cab-cap { box-shadow: 0 1px 0 #48435a, 0 3px 6px rgba(0, 0, 0, .5); }
+.cab-btn:disabled { cursor: default; opacity: .35; }
+.cab-start:not(:disabled) .cab-cap { animation: cab-glow 1.1s steps(1) infinite; }
+@keyframes cab-glow { 50% { background: radial-gradient(circle at 36% 30%, #ffd2c9 0, #ff5a4c 46%, #a51b1b 100%); } }
+.cab-btn:focus { outline: none; }
+.cab-btn:focus-visible .cab-cap, .cab-dir:focus-visible { outline: 2px dashed var(--cab-cool); outline-offset: 4px; }
+
+/* celular: gabinete mais estreito, letreiro e painel compactos, sem a alavanca */
+@media (max-width: 600px) {
+  body { padding-inline: 8px; padding-block: 8px 0; }
+  #app { min-height: 0; }
+  .cab { border-width: 3px; border-radius: 16px 16px 0 0; }
+  .cab-marquee { margin: 7px 7px 0; }
+  .cab-bezel { margin: 8px 7px 0; padding: 6px; }
+  .cab-view > .cab-game { padding-inline: 8px; }
+  .cab-panel { margin-inline: -10px; padding-inline: 18px; }
+  .cab-stick { display: none; }
+  .cab-decal { text-align: left; }
+}
+@media (max-height: 760px) and (min-width: 601px) {
+  .cab-mq-sub { display: none; }
+  .cab-stick { width: 96px; height: 96px; }
+  .cab-plate { inset: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cab-press span, .cab-tile[aria-current="true"] .cab-tname::before, .cab-start:not(:disabled) .cab-cap { animation: none; }
+  .cab-view.is-off, .cab-view.is-on { animation: none; }
+  .cab-shot, .cab-ball { transition: none; }
+}
 </style>
 <style id="screen-css"></style>
 <div id="app"></div>
-<template id="css-hub"><style>
-/* Layout: título grande em cima e uma prateleira de cartões, um por jogo; vira uma coluna no celular */
-:root {
-  --page: #efeee9; --ink: #1d1c1a; --dim: #625f57; --line: #d8d5cc; --card: #fbfaf6;
-  --accent: #f2b705; --accent-ink: #231a00; --shadow: rgba(30, 28, 20, .2);
-  --font-display: "Big Shoulders Display", Impact, sans-serif;
-  --font-ui: "Atkinson Hyperlegible", system-ui, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --page: #121210; --ink: #ecebe5; --dim: #9a978e; --line: #2b2a26; --card: #1b1a17;
-    --accent: #f5c518; --accent-ink: #231a00; --shadow: rgba(0, 0, 0, .55);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --page: #121210; --ink: #ecebe5; --dim: #9a978e; --line: #2b2a26; --card: #1b1a17;
-  --accent: #f5c518; --accent-ink: #231a00; --shadow: rgba(0, 0, 0, .55);
-  color-scheme: dark;
-}
-[hidden] { display: none !important; }
-html, body { height: 100%; }
-body {
-  background: var(--page); color: var(--ink); font-family: var(--font-ui);
-  box-sizing: border-box; min-height: 100%; height: auto;
-  padding-inline: 16px; padding-block: 28px;
-  display: flex; justify-content: center;
-}
-.hub { width: 100%; max-width: 1080px; display: flex; flex-direction: column; gap: 22px; }
-.hub h1 { margin: 0; font: 900 clamp(52px, 9vw, 96px)/.85 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
-.lead { margin: 10px 0 0; color: var(--dim); font-size: 15px; }
-.shelf { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 18px; }
-.gcard {
-  background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
-  display: flex; flex-direction: column; box-shadow: 0 16px 32px -22px var(--shadow); min-width: 0;
-}
-.thumb { display: block; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; height: auto; }
-.gbody { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.gcard h2 { margin: 0; font: 900 34px/1 var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
-.gcard p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--dim); max-width: 60ch; }
-.gcard .meta { font-size: 12.5px; font-variant-numeric: tabular-nums; }
-.play {
-  margin-top: auto; align-self: flex-start;
-  font: 700 15px/1 var(--font-ui); background: var(--accent); color: var(--accent-ink);
-  border: 0; border-radius: 12px; padding: 13px 20px; cursor: pointer;
-}
-.play:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-</style></template>
 <template id="css-cobrinha"><style>
 /* Layout: placar no topo, o jardim (canvas) no centro com os menus por cima, dicas embaixo */
 :root {
@@ -78,15 +244,14 @@ body {
     color-scheme: dark;
   }
 }
-:root[data-theme="dark"] {
+:root {
   --page: #0c120e; --panel: #141c17; --ink: #e1e8dc; --dim: #8b9a8c; --line: #253129;
   --accent: #efbf47; --accent-ink: #231a04;
   --shadow: rgba(0, 0, 0, .6);
   color-scheme: dark;
 }
 
-html, body { height: 100%; }
-body {
+.cab-game {
   background: var(--page); color: var(--ink); font-family: var(--font-ui);
   box-sizing: border-box; min-height: 100%; height: auto;
   padding-inline: 16px; padding-block: 20px;
@@ -260,7 +425,7 @@ canvas { display: block; }
     color-scheme: dark;
   }
 }
-:root[data-theme="dark"] {
+:root {
   --page: #141311; --panel: #1d1b18; --ink: #ece8df; --dim: #9c968a; --line: #2e2b26;
   --accent: #f5c518; --accent-ink: #231a00;
   --shadow: rgba(0, 0, 0, .6);
@@ -268,8 +433,7 @@ canvas { display: block; }
 }
 
 [hidden] { display: none !important; }
-html, body { height: 100%; }
-body {
+.cab-game {
   background: var(--page); color: var(--ink); font-family: var(--font-ui);
   box-sizing: border-box; min-height: 100%; height: auto;
   padding-inline: 16px; padding-block: 20px;
@@ -419,8 +583,7 @@ canvas { display: block; }
   color-scheme: dark;
 }
 [hidden] { display: none !important; }
-html, body { height: 100%; }
-body {
+.cab-game {
   background: var(--page); color: var(--ink); font-family: var(--font-ui);
   box-sizing: border-box; min-height: 100%; height: auto;
   padding-inline: 16px; padding-block: 20px;
@@ -3927,7 +4090,7 @@ function mountAbismo(data) {
   return { unmount, snapshot: () => ({ st, phase }) };
 }
 
-// Fliperama: escolhe o jogo, monta ele na página e desmonta ao voltar
+// Fliperama: um gabinete com o menu na tela; o jogo escolhido é montado dentro do tubo e desmontado ao sair
 const readNum = k => { try { return parseInt(localStorage.getItem(k) || '0', 10) || 0; } catch (e) { return 0; } };
 function seeded(a) { return () => { a = (a * 1103515245 + 12345) % 2147483648; return a / 2147483648; }; }
 
@@ -4062,52 +4225,206 @@ function thumbAbismo(c) {
 const GAME_LIST = [
   { id: 'cobrinha', name: 'Cobrinha', mount: mountCobrinha, thumb: thumbCobrinha,
     desc: 'Coma maçãs no jardim, cresça e não bata em nada. Cinco modos de jogo e ciclo de dia e noite.',
-    meta: () => 'Recorde no Clássico: ' + readNum('cobrinha.best') },
+    rec: () => ['Recorde no Clássico', String(readNum('cobrinha.best'))] },
   { id: 'pega-pega', name: 'Pega-pega', mount: mountPegaPega, thumb: thumbPega,
     desc: 'Um minuto para montar o esconderijo com caixas e rampas, um minuto para fugir do pegador.',
-    meta: () => 'Placar: você ' + readNum('pegapega.w') + ' × ' + readNum('pegapega.l') + ' pegador' },
+    rec: () => ['Você × pegador', readNum('pegapega.w') + ' × ' + readNum('pegapega.l')] },
   { id: 'abismo', name: 'Abismo', mount: mountAbismo, thumb: thumbAbismo,
     desc: 'Tiro em primeira pessoa numa estação tomada por criaturas. Ache os cartões, abra as portas e chegue à saída.',
-    meta: () => { const b = readNum('abismo.best.normal'); return b ? 'Melhor tempo no Normal: ' + Math.floor(b / 60) + ':' + String(b % 60).padStart(2, '0') : 'Ainda ninguém chegou à saída.'; } }
+    rec: () => { const b = readNum('abismo.best.normal'); return ['Melhor tempo no Normal', b ? Math.floor(b / 60) + ':' + String(b % 60).padStart(2, '0') : '--:--']; } }
 ];
 const GAME_BY_ID = {};
 GAME_LIST.forEach(g => { GAME_BY_ID[g.id] = g; });
 const app = document.getElementById('app'), screenCss = document.getElementById('screen-css');
-let current = null;
+const coarseMq = matchMedia('(pointer: coarse)'), reduceMq = matchMedia('(prefers-reduced-motion: reduce)');
+let current = null, sel = 0, busy = false;
+try { sel = Math.min(GAME_LIST.length - 1, Math.max(0, parseInt(localStorage.getItem('fliperama.sel') || '0', 10) || 0)); } catch (e) {}
+
+// carpete de salão de fliperama, desenhado uma vez e repetido no fundo
+(function carpet() {
+  try {
+    const c = document.createElement('canvas'); c.width = c.height = 200;
+    const g = c.getContext('2d'), rnd = seeded(11), cols = ['#ff4f8b', '#45d4ff', '#f5c518', '#9b6bff'];
+    g.lineWidth = 2.5; g.lineCap = 'round';
+    for (let i = 0; i < 26; i++) {
+      const x = rnd() * 200, y = rnd() * 200, col = cols[i % 4], k = i % 3;
+      g.strokeStyle = g.fillStyle = col; g.globalAlpha = .2;
+      g.beginPath();
+      if (k === 0) g.arc(x, y, 4 + rnd() * 6, 0, 7);
+      else if (k === 1) { g.moveTo(x, y); for (let j = 1; j < 5; j++) g.lineTo(x + j * 6, y + (j % 2 ? -6 : 0)); }
+      else { g.moveTo(x, y - 6); g.lineTo(x + 6, y + 5); g.lineTo(x - 6, y + 5); g.closePath(); }
+      g.stroke();
+    }
+    document.documentElement.style.setProperty('--cab-carpet', 'url(' + c.toDataURL() + ')');
+  } catch (e) {}
+})();
+
+// bipes curtos do menu
+let sfxCtx = null;
+function blip(notes) {
+  try {
+    sfxCtx = sfxCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = sfxCtx.currentTime;
+    notes.forEach((f, i) => {
+      const o = sfxCtx.createOscillator(), v = sfxCtx.createGain(), t = t0 + i * .07;
+      o.type = 'square'; o.frequency.value = f;
+      v.gain.setValueAtTime(.035, t); v.gain.exponentialRampToValueAtTime(.0001, t + .09);
+      o.connect(v).connect(sfxCtx.destination); o.start(t); o.stop(t + .1);
+    });
+  } catch (e) {}
+}
+
+app.innerHTML =
+  '<div class="cab">' +
+    '<header class="cab-marquee"><div class="cab-mq-title" role="heading" aria-level="1">Fliperama</div><p class="cab-mq-sub" id="cab-sub"></p></header>' +
+    '<div class="cab-bezel"><div class="cab-tube" id="cab-tube"><div class="cab-view" id="cab-view"></div><div class="cab-glass" aria-hidden="true"></div></div></div>' +
+    '<div class="cab-panel">' +
+      '<div class="cab-stick" role="group" aria-label="Alavanca"><span class="cab-plate" aria-hidden="true"></span><span class="cab-ball" id="cab-ball" aria-hidden="true"></span>' +
+        [['up', '▲', 'Para cima'], ['left', '◀&#xFE0E;', 'Para a esquerda'], ['right', '▶&#xFE0E;', 'Para a direita'], ['down', '▼', 'Para baixo']]
+          .map(([d, s, l]) => '<button type="button" class="cab-dir" tabindex="-1" data-dir="' + d + '" aria-label="' + l + '">' + s + '</button>').join('') +
+      '</div>' +
+      '<p class="cab-decal" id="cab-decal"></p>' +
+      '<div class="cab-btns">' +
+        '<button type="button" class="cab-btn cab-exit" id="cab-exit"><span class="cab-cap" aria-hidden="true"></span><span>Sair</span></button>' +
+        '<button type="button" class="cab-btn cab-start" id="cab-start"><span class="cab-cap" aria-hidden="true"></span><span>Start</span></button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+const cab = app.querySelector('.cab'), view = document.getElementById('cab-view'), tube = document.getElementById('cab-tube');
+const subEl = document.getElementById('cab-sub'), decal = document.getElementById('cab-decal');
+const startBtn = document.getElementById('cab-start'), exitBtn = document.getElementById('cab-exit'), ball = document.getElementById('cab-ball');
+
+// desliga e liga o tubo entre o menu e o jogo
+function crt(fn) {
+  if (busy) return;
+  if (reduceMq.matches) { fn(); return; }
+  busy = true;
+  view.classList.add('is-off');
+  setTimeout(() => {
+    view.classList.remove('is-off');
+    fn();
+    view.classList.add('is-on');
+    setTimeout(() => { view.classList.remove('is-on'); busy = false; }, 340);
+  }, 200);
+}
 
 function closeGame() {
   if (!current) return;
   try { current.inst.unmount(); } catch (e) {}
   current = null;
+  screenCss.textContent = '';
 }
+
+function select(i, focus) {
+  sel = (i + GAME_LIST.length) % GAME_LIST.length;
+  try { localStorage.setItem('fliperama.sel', String(sel)); } catch (e) {}
+  const g = GAME_LIST[sel], [k, v] = g.rec();
+  view.querySelectorAll('.cab-tile').forEach((t, j) => t.setAttribute('aria-current', j === sel ? 'true' : 'false'));
+  const d = view.querySelector('#cab-desc'); if (d) d.textContent = g.desc;
+  const rk = view.querySelector('#cab-rec-k'); if (rk) rk.textContent = k;
+  const rv = view.querySelector('#cab-rec-v'); if (rv) rv.textContent = v;
+  if (focus) { const t = view.querySelectorAll('.cab-tile')[sel]; if (t) t.focus(); }
+}
+
 function showHub(focusId) {
   closeGame();
-  screenCss.textContent = document.getElementById('css-hub').content.querySelector('style').textContent;
-  app.innerHTML =
-    '<main class="hub"><header><h1>Fliperama</h1><p class="lead">' + GAME_LIST.length + ' jogos. Escolha um para jogar.</p></header>' +
-    '<div class="shelf">' + GAME_LIST.map(g =>
-      '<article class="gcard"><canvas class="thumb" width="640" height="360" data-thumb="' + g.id + '" aria-hidden="true"></canvas>' +
-      '<div class="gbody"><h2>' + g.name + '</h2><p>' + g.desc + '</p><p class="meta">' + g.meta() + '</p>' +
-      '<button type="button" class="play" data-game="' + g.id + '">Jogar ' + g.name + '</button></div></article>').join('') +
-    '</div></main>';
-  app.querySelectorAll('canvas[data-thumb]').forEach(c => { try { GAME_BY_ID[c.dataset.thumb].thumb(c); } catch (e) {} });
-  app.querySelectorAll('[data-game]').forEach(b => b.addEventListener('click', () => openGame(b.dataset.game)));
-  window.scrollTo(0, 0);
-  if (focusId) { const b = app.querySelector('[data-game="' + focusId + '"]'); if (b) b.focus(); }
+  tube.classList.remove('is-game');
+  cab.classList.remove('is-playing'); decal.classList.remove('is-hint');
+  if (focusId && GAME_BY_ID[focusId]) sel = GAME_LIST.indexOf(GAME_BY_ID[focusId]);
+  view.scrollTop = 0;
+  view.innerHTML =
+    '<div class="cab-menu">' +
+      '<div class="cab-hud"><span><b>' + GAME_LIST.length + '</b> jogos</span><span class="cab-hud-mid">Selecione o jogo</span><span>Jogo <b>livre</b></span></div>' +
+      '<div class="cab-tiles">' + GAME_LIST.map((g, i) =>
+        '<button type="button" class="cab-tile" data-i="' + i + '" aria-current="false">' +
+        '<span class="cab-shot"><canvas width="256" height="144" data-thumb="' + g.id + '" aria-hidden="true"></canvas></span>' +
+        '<span class="cab-tname">' + g.name + '</span></button>').join('') + '</div>' +
+      '<div class="cab-info" aria-live="polite"><p class="cab-desc" id="cab-desc"></p><p class="cab-rec"><span id="cab-rec-k"></span><b id="cab-rec-v"></b></p></div>' +
+      '<p class="cab-press"><span>' + (coarseMq.matches ? 'Toque em Start' : 'Aperte Start') + '</span></p>' +
+      '<p class="cab-keys">' + (coarseMq.matches ? 'Toque num jogo para escolher' : '◀ ▶ escolhem · Enter joga') + '</p>' +
+    '</div>';
+  // miniaturas desenhadas grandes e reduzidas, para ficarem com cara de pixel
+  const big = document.createElement('canvas'); big.width = 640; big.height = 360;
+  view.querySelectorAll('canvas[data-thumb]').forEach(c => {
+    try { big.getContext('2d').clearRect(0, 0, 640, 360); GAME_BY_ID[c.dataset.thumb].thumb(big); c.getContext('2d').drawImage(big, 0, 0, c.width, c.height); } catch (e) {}
+  });
+  view.querySelectorAll('.cab-tile').forEach(t => {
+    const i = +t.dataset.i;
+    t.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse' && i !== sel) { select(i); blip([660]); } });
+    t.addEventListener('click', () => { if (i === sel) play(); else { select(i); blip([660]); } });
+  });
+  select(sel, !!focusId);
+  subEl.textContent = GAME_LIST.length + ' jogos · jogo livre';
+  decal.innerHTML = '<b>◀ ▶</b> escolhe o jogo · <b>Start</b> joga';
+  startBtn.disabled = false; exitBtn.disabled = true;
 }
+
 function openGame(id, data) {
   const g = GAME_BY_ID[id];
   if (!g) { showHub(); return; }
   closeGame();
   screenCss.textContent = document.getElementById('css-' + id).content.querySelector('style').textContent;
-  app.innerHTML = document.getElementById('html-' + id).innerHTML;
-  const back = document.createElement('button');
-  back.type = 'button'; back.className = 'backbtn'; back.textContent = '← Jogos';
-  back.addEventListener('click', () => showHub(id));
-  (app.querySelector('.wrap') || app).prepend(back);
-  window.scrollTo(0, 0);
+  tube.classList.add('is-game');
+  view.scrollTop = 0;
+  view.innerHTML = '<div class="cab-game">' + document.getElementById('html-' + id).innerHTML + '</div>';
   current = { id, inst: g.mount(data) };
+  const wrap = view.querySelector('.wrap'); if (wrap) fitObs.observe(wrap);
+  subEl.textContent = 'Jogando: ' + g.name;
+  // as dicas de controle do jogo vão para o painel
+  const hints = Array.from(view.querySelectorAll('.hint'));
+  decal.innerHTML = hints.length ? hints.map(h => '<span class="' + h.className.replace(/\bhint\b/, '').trim() + '">' + h.innerHTML + '</span>').join('') : '<b>Sair</b> volta para a escolha de jogos';
+  decal.classList.toggle('is-hint', hints.length > 0);
+  cab.classList.add('is-playing');
+  startBtn.disabled = true; exitBtn.disabled = false;
+  const stage = view.querySelector('.stage'); if (stage) stage.focus({ preventScroll: true });
 }
+
+function play() { if (!current) { blip([523, 659, 784, 1047]); crt(() => openGame(GAME_LIST[sel].id)); } }
+function exit() { if (current) { const id = current.id; blip([784, 523]); crt(() => showHub(id)); } }
+
+// o jogo ocupa a tela inteira do tubo: a largura da página do jogo é ajustada para a altura caber
+function fitGame() {
+  if (!current) return;
+  const game = view.firstElementChild, wrap = game && game.querySelector('.wrap'), stage = wrap && wrap.querySelector('.stage');
+  if (!stage || !stage.offsetHeight) return;
+  const cs = getComputedStyle(game);
+  const used = wrap.offsetHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const stageH = stage.offsetHeight + view.clientHeight - used;
+  const w = Math.max(280, Math.floor(stageH * stage.offsetWidth / stage.offsetHeight));
+  if (Math.abs(w - (parseFloat(wrap.style.maxWidth) || 0)) > 2) wrap.style.maxWidth = w + 'px';
+}
+let fitRaf = 0;
+const fitObs = new ResizeObserver(() => { cancelAnimationFrame(fitRaf); fitRaf = requestAnimationFrame(fitGame); });
+fitObs.observe(tube);
+
+// a alavanca mexe junto com as setas, e no jogo os cliques nela viram setas
+const DIR_KEY = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+const KEY_TILT = { ArrowUp: [0, -1], KeyW: [0, -1], ArrowDown: [0, 1], KeyS: [0, 1], ArrowLeft: [-1, 0], KeyA: [-1, 0], ArrowRight: [1, 0], KeyD: [1, 0] };
+const tilt = (x, y) => { ball.style.setProperty('--tx', x); ball.style.setProperty('--ty', y); };
+app.querySelectorAll('.cab-dir').forEach(b => {
+  const code = DIR_KEY[b.dataset.dir], [tx, ty] = KEY_TILT[code];
+  let held = false;
+  const up = () => { if (!held) return; held = false; tilt(0, 0); if (current) window.dispatchEvent(new KeyboardEvent('keyup', { code, key: code })); };
+  b.addEventListener('pointerdown', e => {
+    e.preventDefault(); held = true; tilt(tx, ty);
+    if (current) window.dispatchEvent(new KeyboardEvent('keydown', { code, key: code }));
+    else { select(sel + (tx || ty)); blip([660]); }
+  });
+  b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up);
+});
+startBtn.addEventListener('click', play);
+exitBtn.addEventListener('click', exit);
+addEventListener('keydown', e => {
+  if (KEY_TILT[e.code]) tilt(...KEY_TILT[e.code]);
+  if (current || busy || e.ctrlKey || e.metaKey || e.altKey) return;
+  const onTile = e.target.classList && e.target.classList.contains('cab-tile');
+  const free = onTile || !e.target.closest || !e.target.closest('button, a, input, select, textarea');
+  if (!free) return;
+  const step = { ArrowLeft: -1, ArrowUp: -1, KeyA: -1, KeyW: -1, ArrowRight: 1, ArrowDown: 1, KeyD: 1, KeyS: 1 }[e.code];
+  if (step) { e.preventDefault(); select(sel + step, true); blip([660]); }
+  else if ((e.code === 'Enter' || e.code === 'Space') && !onTile) { e.preventDefault(); play(); }
+});
+addEventListener('keyup', e => { if (KEY_TILT[e.code]) tilt(0, 0); });
 
 window.claude?.hot?.snapshot?.(() => ({ game: current ? current.id : null, data: current ? current.inst.snapshot() : null }));
 const startApp = d => { if (d && d.game && GAME_BY_ID[d.game]) openGame(d.game, d.data); else showHub(); };

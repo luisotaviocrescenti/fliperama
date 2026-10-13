@@ -17,7 +17,11 @@ function once(src, from, to, label) {
 
 function convert(g) {
   const html = fs.readFileSync(path.join(dir, g.file), 'utf8');
-  const css = html.split('<style>')[1].split('</style>')[0];
+  let css = html.split('<style>')[1].split('</style>')[0];
+  // o jogo roda dentro da tela do gabinete: o que era da página passa a ser da tela, sempre no tema escuro
+  css = once(css, /^html, body \{ height: 100%; \}\n/m, '', g.id + ' html');
+  css = once(css, /^body \{/m, '.cab-game {', g.id + ' body');
+  css = css.replace(/^:root\[data-theme="dark"\] \{/m, ':root {');
   const markup = html.split('</style>')[1].split('<script>')[0].trim();
   let js = html.split('<script>')[1].split('</script>')[0].trim();
   if (!js.startsWith('(() => {') || !js.endsWith('})();')) throw new Error(g.id + ': script fora do formato esperado');
@@ -56,16 +60,13 @@ const out =
   '<title>Fliperama</title>\n' +
   '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
   '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
-  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;900&family=Bricolage+Grotesque:opsz,wght@12..96,700..800&family=Teko:wght@500;600;700&display=swap">\n' +
+  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;900&family=Bricolage+Grotesque:opsz,wght@12..96,700..800&family=Bungee&family=Silkscreen:wght@400;700&family=Teko:wght@500;600;700&display=swap">\n' +
   '<style>\n' +
   '[hidden] { display: none !important; }\n' +
-  '/* botão de voltar ao Fliperama, usa as cores de cada jogo */\n' +
-  '.backbtn { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; font: 700 13px/1 "Atkinson Hyperlegible", system-ui, sans-serif; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 9px 15px; cursor: pointer; }\n' +
-  '.backbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }\n' +
   '</style>\n' +
+  '<style id="hub-css">' + hubCss + '</style>\n' +
   '<style id="screen-css"></style>\n' +
   '<div id="app"></div>\n' +
-  '<template id="css-hub"><style>' + hubCss + '</style></template>\n' +
   parts.map(p => '<template id="css-' + p.id + '"><style>' + p.css + '</style></template>\n<template id="html-' + p.id + '">' + p.markup + '</template>\n').join('') +
   '<script>\n' +
   parts.map(p => p.js).join('\n') + '\n' +

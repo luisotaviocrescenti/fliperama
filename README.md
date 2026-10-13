@@ -1,6 +1,6 @@
 # Joguinhos
 
-O Fliperama é a porta de entrada. Ele abre numa tela com um cartão para cada jogo. A pessoa escolhe um, joga, e o botão de voltar leva de novo para a escolha.
+O Fliperama é a porta de entrada. Ele abre como um gabinete de fliperama visto de frente, com o letreiro em cima, a tela no meio e o painel com alavanca e botões embaixo. O menu aparece na tela do gabinete: a pessoa escolhe o jogo com as setas, a alavanca ou um clique e aperta Start. O jogo roda dentro da mesma tela, com as instruções impressas no painel, e o botão Sair volta para a escolha.
 
 Os jogos de hoje:
 
@@ -18,7 +18,7 @@ Com o GitHub Pages ligado (Settings > Pages, publicando a partir de um branch, p
 
 ## Como os arquivos se juntam
 
-Cada jogo tem o seu arquivo: `cobrinha.html`, `pega-pega.html` e `abismo.html`. O `hub.html` é a tela de escolha. O `build.js` junta tudo:
+Cada jogo tem o seu arquivo: `cobrinha.html`, `pega-pega.html` e `abismo.html`. O `hub.html` é o gabinete com o menu. O `build.js` junta tudo:
 
 ```
 node build.js
@@ -28,7 +28,9 @@ Ele grava dois arquivos. O `fliperama.html` é o mesmo que foi publicado no clau
 
 O GitHub Pages serve o `index.html` como está no repositório. Depois de mexer num jogo, rode o build e faça commit dos arquivos gerados junto com a mudança.
 
-Um jogo novo entra como mais um item na lista `GAMES` do `build.js` e mais um cartão no `hub.html`. O build confere o formato do arquivo do jogo e para com uma mensagem quando algo está fora do esperado.
+Dentro do gabinete, o estilo de cada jogo vale só para a tela e fica sempre no tema escuro; o build faz essa troca sozinho.
+
+Um jogo novo entra como mais um item na lista `GAMES` do `build.js` e mais um item na `GAME_LIST` do `hub.html`. O build confere o formato do arquivo do jogo e para com uma mensagem quando algo está fora do esperado.
 
 ## Testes
 
