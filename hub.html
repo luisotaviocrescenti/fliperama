@@ -20,6 +20,7 @@
   color-scheme: dark;
 }
 html, body { height: 100%; }
+@supports (height: 100dvh) { body { height: 100dvh; } }
 body {
   margin: 0; box-sizing: border-box; color: var(--cab-phos); font-family: var(--cab-font-ui);
   background: radial-gradient(ellipse at 50% 35%, rgba(14, 11, 20, 0) 25%, rgba(6, 5, 9, .82) 100%), var(--cab-carpet, none), var(--cab-room);
@@ -68,7 +69,7 @@ body {
   border-radius: 3.2% / 4.6%; background: var(--cab-tube);
   box-shadow: 0 0 0 3px #000, 0 0 30px rgba(69, 212, 255, .12);
 }
-.cab-view { position: absolute; inset: 0; overflow: auto; container-type: size; }
+.cab-view { position: absolute; inset: 0; overflow: auto; container-type: size; contain: layout; }
 .cab-glass {
   position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
   background:
@@ -117,19 +118,77 @@ body {
 @keyframes cab-blink { 50% { opacity: 0; } }
 
 @container (max-width: 560px) {
+  .cab-hud-mid { display: none; }
+}
+/* tela estreita e alta (celular em pé): os jogos viram uma lista */
+@container (max-width: 560px) and (min-height: 421px) {
   .cab-tiles { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .cab-tile { flex-direction: row; align-items: center; gap: 14px; text-align: left; font-size: 15px; }
-  .cab-shot { flex: 0 0 42%; padding: 3px; border-width: 2px; }
+  .cab-shot { flex: 0 0 38%; padding: 3px; border-width: 2px; }
+  .cab-menu { gap: 14px; }
   .cab-tile[aria-current="true"] .cab-shot { transform: translateX(4px); }
-  .cab-hud-mid { display: none; }
-  .cab-rec { text-align: left; }
+  .cab-rec { flex-direction: row; align-items: baseline; gap: 12px; text-align: left; }
 }
-@container (max-height: 360px) and (min-width: 561px) { .cab-desc { display: none; } .cab-info { min-height: 0; justify-content: flex-end; } }
+@container (max-height: 360px) {
+  .cab-desc { display: none; }
+  .cab-info { min-height: 0; justify-content: center; }
+  .cab-rec { flex-direction: row; align-items: baseline; gap: 12px; }
+  .cab-menu { gap: 10px; padding-block: 10px; }
+  .cab-tile { font-size: 12px; gap: 6px; }
+  .cab-keys { margin: 0; }
+}
 
 /* jogo dentro do tubo: o nome já está no letreiro e as instruções vão impressas no painel,
    então o título e as dicas do jogo somem, e letreiro e painel encolhem para a tela crescer */
-.cab-view > .cab-game { padding-block: 12px; }
+.cab-view > .cab-game { padding-block: 12px; align-items: center; }
 .cab-view > .cab-game h1, .cab-view > .cab-game .hint { display: none; }
+/* os menus de cada jogo (início, pausa, fim) cobrem a tela inteira do tubo, e não só a área do jogo,
+   que no celular tem uns 200px de altura. O contain: layout do .cab-view faz dele a referência do fixed */
+.cab-game .overlay { position: fixed; inset: 0; background: rgba(4, 4, 8, .55); }
+/* se o menu ainda for mais alto que a tela, o texto rola e os botões ficam presos embaixo, sempre à vista */
+.cab-game .card > .btns:last-child { position: sticky; bottom: 0; }
+@container (max-height: 620px) {
+  .cab-game .overlay { padding: 8px; }
+  .cab-game .card { padding: 14px 16px; gap: 8px; }
+  .cab-game .card h2 { font-size: 26px; }
+  .cab-game .card h2.title { font-size: 40px; }
+  .cab-game .card p, .cab-game .rules li { font-size: 13px; line-height: 1.4; }
+  .cab-game .btn { padding: 11px 14px; }
+}
+@container (max-height: 360px) {
+  .cab-game .card { max-width: 560px; }
+  .cab-game .card h2.title { font-size: 32px; }
+  .cab-game .rules { gap: 4px; }
+}
+/* tela pequena: sem o subtítulo do jogo e com o placar mais baixo */
+@container (max-width: 600px) or (max-height: 520px) {
+  .cab-game .top > div:first-child { display: none; }
+  .cab-game .stats { gap: 6px 16px; }
+  .cab-game .stat .k { font-size: 9.5px; }
+  .cab-game .stat .v { font-size: 21px; }
+  .cab-game .stat .v.small { font-size: 14px; line-height: 21px; }
+}
+/* tela baixa e larga (celular deitado): controles de toque e painel de status do lado da área do jogo */
+@container (max-height: 440px) and (min-width: 480px) {
+  .cab-game .wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "top top" "fit side"; gap: 8px 12px; align-items: center; }
+  .cab-game .top { grid-area: top; }
+  .cab-game .fit { grid-area: fit; }
+  .cab-game .controls, .cab-game .hud { grid-area: side; }
+  .cab-game .controls { flex-direction: column; flex-wrap: nowrap; justify-content: center; gap: 8px; }
+  .cab-game .keypad { grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 40px); gap: 5px; }
+  .cab-game .pad { gap: 8px; }
+  .cab-game .dpad { grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 34px); gap: 4px; }
+  .cab-game .acts { gap: 6px; }
+  .cab-game .acts button { padding: 10px 12px; font-size: 13px; }
+  .cab-game .actions { flex-direction: column; align-items: stretch; gap: 6px; }
+  .cab-game .toggle { padding: 9px 12px; font-size: 13px; }
+  .cab-game .hud { grid-template-columns: repeat(2, 80px); margin-top: 0; border-radius: 10px; }
+  .cab-game .hud .cell { border: 0; padding: 5px 4px; }
+  .cab-game .cell .k { white-space: normal; text-align: center; line-height: 1.2; }
+  .cab-game .cell .v { font-size: 26px; }
+  .cab-game .cell .v.small { font-size: 17px; line-height: 26px; }
+  .cab-game .slots b { width: 18px; font-size: 17px; }
+}
 .cab.is-playing .cab-marquee { padding-block: 6px 8px; }
 .cab.is-playing .cab-mq-title { font-size: clamp(24px, 3.4vw, 38px); }
 .cab.is-playing .cab-mq-sub { display: block; margin-top: 4px; }
@@ -167,7 +226,7 @@ body {
 }
 .cab-ball::before { content: ""; position: absolute; left: 50%; top: 100%; width: 10px; height: 18px; margin-left: -5px; background: linear-gradient(90deg, #6d6a75, #cfcbd6, #6d6a75); }
 .cab-dir {
-  position: relative; z-index: 1; width: 30px; height: 30px; padding: 0; border-radius: 50%; cursor: pointer;
+  position: relative; z-index: 1; touch-action: none; width: 30px; height: 30px; padding: 0; border-radius: 50%; cursor: pointer;
   border: 0; background: rgba(255, 255, 255, .06); color: var(--cab-dim); font: 700 11px/1 var(--cab-font-pixel);
 }
 .cab-dir:hover { color: var(--cab-phos); background: rgba(255, 255, 255, .12); }
@@ -192,17 +251,62 @@ body {
 .cab-btn:focus { outline: none; }
 .cab-btn:focus-visible .cab-cap, .cab-dir:focus-visible { outline: 2px dashed var(--cab-cool); outline-offset: 4px; }
 
-/* celular: gabinete mais estreito, letreiro e painel compactos, sem a alavanca */
+/* celular em pé: bordas finas para o jogo ficar largo, sem a alavanca (cada jogo tem os seus controles de toque);
+   durante o jogo o letreiro vira uma faixa e o painel fica só com as dicas e o Sair */
 @media (max-width: 600px) {
-  body { padding-inline: 8px; padding-block: 8px 0; }
+  body { padding-inline: 4px; padding-block: 4px 0; }
   #app { min-height: 0; }
-  .cab { border-width: 3px; border-radius: 16px 16px 0 0; }
-  .cab-marquee { margin: 7px 7px 0; }
-  .cab-bezel { margin: 8px 7px 0; padding: 6px; }
-  .cab-view > .cab-game { padding-inline: 8px; }
-  .cab-panel { margin-inline: -10px; padding-inline: 18px; }
-  .cab-stick { display: none; }
+  .cab { border-width: 3px; border-radius: 14px 14px 0 0; }
+  .cab-marquee { margin: 5px 5px 0; }
+  .cab-bezel { margin: 6px 5px 0; padding: 4px; }
+  .cab-view > .cab-game { padding-inline: 4px; }
+  .cab-panel { margin: 8px -4px 0; padding-inline: 16px; }
+  .cab-stick, .cab-keys, .cab:not(.is-playing) .cab-exit { display: none; }
   .cab-decal { text-align: left; }
+  .cab.is-playing .cab-marquee { padding-block: 3px 5px; }
+  .cab.is-playing .cab-mq-title { font-size: 22px; }
+  .cab.is-playing .cab-mq-sub { display: none; }
+  .cab-game .keypad { grid-template-columns: repeat(3, 58px); grid-template-rows: repeat(3, 44px); gap: 6px; }
+  .cab-game .dpad { grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(3, 46px); }
+  .cab.is-playing .cab-start { display: none; }
+  .cab.is-playing .cab-panel { padding-block: 6px 10px; }
+  .cab-decal.is-hint { font-size: 12px; line-height: 1.6; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+}
+/* celular em pé e baixo: durante o jogo o letreiro sai para sobrar altura */
+@media (max-width: 600px) and (max-height: 600px) {
+  .cab.is-playing .cab-marquee { display: none; }
+  .cab.is-playing .cab-bezel { margin-top: 5px; }
+  .cab-decal.is-hint { -webkit-line-clamp: 2; }
+}
+/* celular deitado: a tela ocupa a altura toda, com a alavanca e as dicas à esquerda e os botões à direita */
+@media (max-height: 520px) and (orientation: landscape) {
+  body { padding: 0 max(6px, env(safe-area-inset-right, 0px)) 0 max(6px, env(safe-area-inset-left, 0px)); }
+  #app { min-height: 0; max-width: none; }
+  .cab {
+    display: grid; grid-template-columns: 108px minmax(0, 1fr) 86px; grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas: "mq mq mq" "stick tube btns" "decal tube btns";
+    border-width: 3px; border-top-width: 0; border-radius: 0 0 0 0;
+  }
+  .cab-marquee { grid-area: mq; margin: 0 0 6px; border-radius: 0 0 10px 10px; padding-block: 2px 4px; }
+  .cab-mq-title, .cab.is-playing .cab-mq-title { font-size: 20px; }
+  .cab-mq-sub, .cab.is-playing .cab-mq-sub { display: none; }
+  .cab-bezel, .cab.is-playing .cab-bezel { grid-area: tube; margin: 0 0 6px; padding: 4px; }
+  .cab-panel { display: contents; }
+  .cab-stick, .cab.is-playing .cab-stick { grid-area: stick; display: grid; justify-self: center; width: 96px; height: 96px; }
+  .cab-plate, .cab.is-playing .cab-plate { inset: 16px; }
+  .cab-ball, .cab.is-playing .cab-ball { width: 38px; height: 38px; margin: -25px 0 0 -19px; }
+  .cab-dir, .cab.is-playing .cab-dir { width: 30px; height: 30px; font-size: 10px; }
+  .cab:not(.is-playing) .cab-decal { display: none; }
+  .cab-decal, .cab-decal.is-hint { grid-area: decal; align-self: start; padding: 6px 8px 0; text-align: left; font-size: 11px; line-height: 1.5; letter-spacing: .04em; overflow: hidden; }
+  .cab-btns { grid-area: btns; flex-direction: column-reverse; align-items: center; justify-content: center; gap: 22px; }
+  .cab-cap, .cab.is-playing .cab-cap { width: 52px; height: 52px; }
+  .cab-exit .cab-cap, .cab.is-playing .cab-exit .cab-cap { width: 40px; height: 40px; }
+  .cab.is-playing .cab-start { display: none; }
+  /* jogando: sem alavanca (cada jogo tem os seus controles de toque), Sair e dicas na coluna da direita */
+  .cab.is-playing { grid-template-columns: minmax(0, 1fr) 112px; grid-template-areas: "mq mq" "tube btns" "tube decal"; }
+  .cab.is-playing .cab-stick { display: none; }
+  .cab.is-playing .cab-btns { align-self: end; padding-top: 6px; }
+  .cab.is-playing .cab-mq-title { font-size: 16px; }
 }
 @media (max-height: 760px) and (min-width: 601px) {
   .cab-mq-sub { display: none; }
@@ -482,7 +586,7 @@ function showHub(focusId) {
   });
   select(sel, !!focusId);
   subEl.textContent = GAME_LIST.length + ' jogos · jogo livre';
-  decal.innerHTML = '<b>◀ ▶</b> escolhe o jogo · <b>Start</b> joga';
+  decal.innerHTML = coarseMq.matches ? 'Toque num jogo e depois em <b>Start</b>' : '<b>◀ ▶</b> escolhe o jogo · <b>Start</b> joga';
   startBtn.disabled = false; exitBtn.disabled = true;
 }
 
@@ -514,11 +618,18 @@ function fitGame() {
   if (!current) return;
   const game = view.firstElementChild, wrap = game && game.querySelector('.wrap'), stage = wrap && wrap.querySelector('.stage');
   if (!stage || !stage.offsetHeight) return;
-  const cs = getComputedStyle(game);
-  const used = wrap.offsetHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-  const stageH = stage.offsetHeight + view.clientHeight - used;
-  const w = Math.max(280, Math.floor(stageH * stage.offsetWidth / stage.offsetHeight));
-  if (Math.abs(w - (parseFloat(wrap.style.maxWidth) || 0)) > 2) wrap.style.maxWidth = w + 'px';
+  const cs = getComputedStyle(game), ws = getComputedStyle(wrap), pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const top = wrap.querySelector('.top'), cv = stage.querySelector('canvas');
+  // em grade (celular deitado) a área do jogo pode ter a altura toda da linha, mesmo que os controles do lado sejam mais altos
+  const stageH = ws.display === 'grid'
+    ? view.clientHeight - pad - (top ? top.offsetHeight + parseFloat(ws.rowGap) : 0)
+    : stage.offsetHeight + view.clientHeight - pad - wrap.offsetHeight;
+  const ratio = cv && cv.width && cv.height ? cv.width / cv.height : stage.offsetWidth / stage.offsetHeight;
+  // no celular deitado os controles ficam ao lado da área do jogo; a largura deles soma à página do jogo
+  const fit = wrap.querySelector('.fit'), side = fit ? wrap.clientWidth - fit.offsetWidth : 0;
+  const w = Math.floor(stageH * ratio) + side;
+  const w2 = Math.max(200, w);
+  if (Math.abs(w2 - (parseFloat(wrap.style.maxWidth) || 0)) > 2) wrap.style.maxWidth = w2 + 'px';
 }
 let fitRaf = 0;
 const fitObs = new ResizeObserver(() => { cancelAnimationFrame(fitRaf); fitRaf = requestAnimationFrame(fitGame); });

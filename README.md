@@ -30,6 +30,8 @@ O GitHub Pages serve o `index.html` como está no repositório. Depois de mexer 
 
 Dentro do gabinete, o estilo de cada jogo vale só para a tela e fica sempre no tema escuro; o build faz essa troca sozinho.
 
+No celular o gabinete se ajusta. Em pé, as bordas ficam finas e a alavanca some, porque cada jogo tem os seus controles de toque. Deitado, a tela ocupa a altura toda, com os botões na lateral, e os controles de toque e o painel de status do jogo vão para o lado da área do jogo. Em qualquer tamanho, os menus de cada jogo (início, pausa e fim) cobrem a tela inteira do gabinete, e não só a área do jogo, e os botões deles ficam sempre à vista.
+
 Um jogo novo entra como mais um item na lista `GAMES` do `build.js` e mais um item na `GAME_LIST` do `hub.html`. O build confere o formato do arquivo do jogo e para com uma mensagem quando algo está fora do esperado.
 
 ## Testes
